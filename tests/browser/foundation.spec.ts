@@ -120,6 +120,89 @@ test('real session authentication, CSRF, localization and responsive shell', asy
     await expect(page.getByRole('status')).toHaveText('Changes saved.');
     if (testInfo.project.name === 'mobile')
         await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('link', { name: 'Clients', exact: true }).click();
+    await page.getByRole('button', { name: 'Add client', exact: true }).click();
+    const clientName = `Fixture-${testInfo.project.name}`;
+    await page.getByLabel('First name', { exact: true }).fill(clientName);
+    await page.getByLabel('Last name', { exact: true }).fill('Offline');
+    await expect(page.getByLabel('Email', { exact: true })).not.toHaveAttribute(
+        'required',
+    );
+    await page
+        .getByRole('combobox', { name: 'Digital access', exact: true })
+        .selectOption('offline');
+    await page
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Client profile', exact: true }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Back to clients', exact: true })
+        .click();
+    await page.getByRole('searchbox').fill(clientName);
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    expect(page.url()).not.toContain(clientName);
+    await page
+        .getByRole('button', {
+            name: `Open profile ${clientName} Offline`,
+            exact: true,
+        })
+        .click();
+    await page
+        .getByRole('button', { name: 'Edit client', exact: true })
+        .click();
+    await page.getByLabel('Last name', { exact: true }).fill('Updated');
+    await page
+        .getByLabel('Operational notes', { exact: false })
+        .fill('Fixture: prefers morning sessions');
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
+    await page.screenshot({
+        path: `test-results/${testInfo.project.name}-client-form.png`,
+        fullPage: true,
+    });
+    await page
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', {
+            name: `${clientName} Updated`,
+            exact: true,
+        }),
+    ).toBeVisible();
+    await expect(
+        page.getByText('Fixture: prefers morning sessions'),
+    ).toBeVisible();
+    await page
+        .getByRole('combobox', { name: 'Change client status', exact: true })
+        .selectOption('inactive');
+    await page
+        .getByRole('button', { name: 'Apply status', exact: true })
+        .click();
+    await expect(
+        page.getByRole('combobox', {
+            name: 'Change client status',
+            exact: true,
+        }),
+    ).toHaveValue('inactive');
+    await expect(
+        page.getByRole('definition').filter({ hasText: /^Inactive$/ }),
+    ).toBeVisible();
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
+    await page.screenshot({
+        path: `test-results/${testInfo.project.name}-client-profile.png`,
+        fullPage: true,
+    });
+    if (testInfo.project.name === 'mobile')
+        await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('link', { name: /Payments/ }).click();
     await expect(
         page.getByText('This section is not available yet.'),

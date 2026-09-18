@@ -57,3 +57,13 @@ php artisan gt:organization-status ORGANIZATION_UUID active --reason='Restrictio
 ```
 
 These are trusted host-operator capabilities, not ordinary user authorization endpoints. Create uses an existing identity and grants its explicit Owner bundle; it never creates credentials. Bootstrap runs only when no active owner exists and cannot restore a revoked membership. Status recovery requires an active owner. Operator actions record null actor with source=operator and bounded reason where required. Keep reasons free of secrets/personal incident details. No commands create a default password, send invitations, or configure mail. New organizations start with Macedonian, Europe/Skopje and MKD; API settings accept other valid IANA timezones.
+
+## GT-003 adoption
+
+Back up gt_dev, then run `php artisan migrate` for the additive client schema. Existing staff permission arrays do not expand silently. An operator can deliberately grant client capabilities to an existing active all-location owner/administrator using:
+
+```bash
+php artisan gt:member-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason='GT-003 adoption'
+```
+
+The membership UUID is available in the authorized staff directory API. This command creates no credentials, sends no mail and writes bounded system-actor audit evidence. Newly provisioned Owner/Administrator bundles include the six client permissions. Clients can be entered through Клиенти without any User, phone or email. Do not populate real PII in test fixtures, screenshots or development demonstrations.

@@ -14,7 +14,7 @@ class MembershipRequest extends LifecycleRequest
     public function rules(): array
     {
         return ['role' => ['sometimes', Rule::enum(StaffRole::class)], 'status' => ['sometimes', Rule::enum(MembershipStatus::class)],
-            'permissions' => ['sometimes', 'array', 'max:14'], 'permissions.*' => ['string', 'distinct', Rule::enum(Permission::class)],
+            'permissions' => ['sometimes', 'array', 'max:'.count(Permission::cases())], 'permissions.*' => ['string', 'distinct', Rule::enum(Permission::class)],
             'location_scope' => ['sometimes', Rule::enum(LocationScope::class)], 'location_ids' => ['sometimes', 'array', 'max:20'],
             'location_ids.*' => ['required', 'uuid', 'distinct']];
     }

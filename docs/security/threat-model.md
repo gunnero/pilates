@@ -2,7 +2,7 @@
 
 ## Overview
 
-GT is a Laravel/React modular monolith with identities, organization/location/staff lifecycles and a localized management shell. Browser → Laravel session/Sanctum → explicit membership/permission checks → PostgreSQL is the current data path. User-provided scope is HP local development only, no public deployment, customer, booking or payment modules. This model incorporates an independent read-only architecture review; final source anchors and later fixes were checked by the implementing agent. Scenarios below are hypotheses/design risks, not confirmed vulnerabilities.
+GT is a Laravel/React modular monolith with identities, organization/location/staff and client lifecycles and a localized management shell. Browser → Laravel session/Sanctum → explicit membership/permission checks → PostgreSQL is the current data path. User-provided scope is HP local development only, no public deployment, customer self-access, booking or payment modules. This model incorporates an independent read-only architecture review; final source anchors and later fixes were checked by the implementing agent. Scenarios below are hypotheses/design risks, not confirmed vulnerabilities.
 
 | Component        | Current responsibility                                              | Evidence                                                                                                |
 | ---------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -35,7 +35,7 @@ The browser boundary uses CSRF, encrypted HttpOnly sessions, same-origin fetch, 
 
 PostgreSQL is authoritative; Redis loss must not alter business entitlements or payments. Shared-host processes with unrestricted Redis access can affect cache/limits; GT prefixes do not isolate adversarial apps. Runtime DB roles own schemas locally for migrations; production must separate DDL/runtime/audit-retention authority. No automatic tenant global scope or RLS exists. Future routes/jobs/exports require their own explicit scoped queries and tests.
 
-Customer/booking/payment modules, real outbound email, mobile token issuance, MFA, off-host immutable audit export, production backups and public hosting are absent. Lifecycle audit DML is now append-only; schema administrators can still alter it. Recovery notification translation/transport and timing behavior need review when real mail is enabled. Framework job failure payloads require redaction before adding jobs. This model does not certify the host, vendor implementations or supply chain.
+Customer self-access/booking/payment modules, real outbound email, mobile token issuance, MFA, off-host immutable audit export, production backups and public hosting are absent. Lifecycle audit DML is now append-only; schema administrators can still alter it. Recovery notification translation/transport and timing behavior need review when real mail is enabled. Framework job failure payloads require redaction before adding jobs. This model does not certify the host, vendor implementations or supply chain.
 
 ## Attack Surface, Mitigations, and Attacker Stories
 
@@ -56,7 +56,7 @@ Customer/booking/payment modules, real outbound email, mobile token issuance, MF
 
 The organization UUID in a route is an untrusted selector. Active membership, active organization and studio.access establish context; the operation Gate establishes authority. The session's selected organization is a preference only. Token abilities are intersected at every gate. `/me` exposes only the caller's active accessible organization choices, but does not itself require an extra token ability.
 
-Locations are constrained by organization and all/selected assignments, with composite foreign keys preventing cross-tenant links. `staff.view` intentionally reveals the organization-wide staff directory even for a selected-location actor; permissions and assignment IDs have separate serialization checks. This is a documented disclosure policy, not branch-directory isolation. No customer data exists.
+Locations are constrained by organization and all/selected assignments, with composite foreign keys preventing cross-tenant links. `staff.view` intentionally reveals the organization-wide staff directory even for a selected-location actor; permissions and assignment IDs have separate serialization checks. This is a documented disclosure policy, not branch-directory isolation. GT-003 now holds customer PII in StudioMember, protected by a stricter all-location client boundary below.
 
 Supported mutations lock the organization row, re-resolve actor authority and persist change/evidence atomically. This prevents stale grants and concurrent last-owner removals in those paths. Aggregate owner count is not protected from trusted raw SQL. Revoked memberships are terminal in the lifecycle service and retained. Already-running reads can finish on their request snapshot. Future jobs must establish context and follow the lock protocol.
 
@@ -83,3 +83,20 @@ The audit byte cap is 8192 with allowlisted shallow structures. Request correlat
 **Low:** bounded non-sensitive disclosure or defense-in-depth gaps with little added authority. A visible Coming soon payment link does not disclose financial data. Unsupported booking/payment scenarios remain future design obligations, not vulnerabilities in absent code.
 
 Impact and confidence are separate. Browser/feature tests support specific controls, not exhaustive assurance. Revisit this model when public hosting, tenant aggregates, sensitive writes, jobs, actual mail or mobile token issuance are introduced.
+
+## GT-003 customer PII boundary
+
+StudioMember is an organization-owned customer identity, with optional contact details/operational notes and optional future User linkage. It is never staff authority or a purchased package. New assets include customer names/contact/notes and profile history. No customer mobile/self-service endpoint exists.
+
+The client surface is `/api/v1/organizations/{UUID}/members` plus JSON POST search and dedicated status mutation. MemberDirectory requires active tenant/staff context, members.view and **all-location scope** before query/representation. Selected-location actors are denied regardless of role/grants/home-location match, until real group/session relationships can support a narrower rule. Per-operation create/update/status permissions and independent notes view/manage capabilities apply. Token abilities remain intersected.
+
+| Attacker story                                                    | Mitigation and evidence                                                                        | Residual boundary                                                            |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Trainer enumerates organization clients using known home location | No selected-location client access; Trainer default has no client permission; API tests        | Future sessions must define actual relevance before relaxing visibility      |
+| Staff guesses another tenant member UUID or preferred location    | Scoped queries, 404s and composite preferred-location FK, tested on PostgreSQL                 | Trusted raw SQL/DDL remains outside application guarantees                   |
+| Profile viewer extracts notes from list or response               | Notes omitted from list SELECT and all responses without notes.view; separate write Gate       | Authorized note viewers can read entered operational text                    |
+| PII escapes via search URLs, audit or exception logs              | JSON body prefix search, minimized audit metadata, class-only errors; regression tests         | Production proxy/body telemetry and backups need access/redaction policy     |
+| Customer User link becomes staff access                           | Nullable linkage is API-immutable; authorization still requires OrganizationMembership; tested | Future claim process must verify identity without contact-only auto-linking  |
+| Archived client edited/reactivated without deliberate recovery    | Profile edit 409; archived → inactive restore before active; no delete                         | Archived detail remains visible to authorized staff, not an erasure workflow |
+
+Duplicate warning is tenant-scoped and advisory, not contact ownership proof or global identity lookup. Notes are bounded operational text, not structured medical records. Field encryption, retention/export/deletion, staff misuse controls and customer consent need future product/deployment decisions. Direct PII values are not duplicated into audit, but audit member UUIDs still identify the referenced record and require protection. GT-003 does not claim a legal compliance outcome. See [review](gt-003-review.md) and [domain/privacy decisions](../domain/studio-members.md).

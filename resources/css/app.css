@@ -58,6 +58,7 @@ select {
 input {
     width: 100%;
 }
+textarea:focus,
 input:focus,
 select:focus,
 button:focus-visible,
@@ -593,5 +594,81 @@ h2 {
     }
     .record-row {
         flex-wrap: wrap;
+    }
+}
+
+.member-filters {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    align-items: end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.member-filters label,
+.member-status-form label {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.member-form textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 7rem;
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    font: inherit;
+    color: inherit;
+    background: white;
+}
+.member-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+.member-details dt {
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+.member-details dd {
+    margin: 0.4rem 0 0;
+    overflow-wrap: anywhere;
+}
+.member-notes p {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.member-status-form {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+}
+.member-status-form p {
+    flex-basis: 100%;
+}
+.member-directory .record-row h3 {
+    overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+    .member-filters {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+@media (max-width: 560px) {
+    .member-filters,
+    .member-details {
+        grid-template-columns: 1fr;
+    }
+    .member-directory .section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .member-status-form > * {
+        width: 100%;
     }
 }

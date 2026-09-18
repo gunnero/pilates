@@ -11,6 +11,7 @@ import { api, ApiError, type Organization, type Profile } from '../lib/api';
 import { OrganizationSettings } from './OrganizationSettings';
 import { Locations } from './Locations';
 import { Staff } from './Staff';
+import { Members } from './Members';
 import { LanguagePicker } from './LanguagePicker';
 const sections = [
     'dashboard',
@@ -159,9 +160,12 @@ export function StudioShell() {
                             </span>
                             <span>{t(item)}</span>
                             {index > 0 &&
-                                !['settings', 'locations', 'staff'].includes(
-                                    item,
-                                ) && (
+                                ![
+                                    'settings',
+                                    'locations',
+                                    'staff',
+                                    'members',
+                                ].includes(item) && (
                                     <span
                                         className="nav-dot"
                                         title={t('soon')}
@@ -252,6 +256,11 @@ export function StudioShell() {
                         />
                     ) : section === 'locations' ? (
                         <Locations
+                            key={organization.id}
+                            organization={organization}
+                        />
+                    ) : section === 'members' ? (
+                        <Members
                             key={organization.id}
                             organization={organization}
                         />

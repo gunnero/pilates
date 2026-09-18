@@ -48,9 +48,17 @@ export const api = {
             body: JSON.stringify(data),
         });
     },
-    async post<T = void>(path: string, data: unknown = {}): Promise<T> {
-        await request<void>('/sanctum/csrf-cookie');
-        return request<T>(path, { method: 'POST', body: JSON.stringify(data) });
+    async post<T = void>(
+        path: string,
+        data: unknown = {},
+        signal?: AbortSignal,
+    ): Promise<T> {
+        await request<void>('/sanctum/csrf-cookie', { signal });
+        return request<T>(path, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            signal,
+        });
     },
 };
 export type Profile = {
@@ -105,3 +113,18 @@ export function errorMessage(error: unknown): string {
               .join(' ') || error.message
         : i18n.t('error');
 }
+
+export type StudioMember = {
+    id: string;
+    first_name: string;
+    last_name: string;
+    phone: string | null;
+    email: string | null;
+    status: 'active' | 'inactive' | 'archived';
+    digital_access_mode: 'app' | 'assisted' | 'offline';
+    preferred_locale: 'mk' | 'en';
+    preferred_location?: { id: string; name: string; status: string } | null;
+    notes?: string | null;
+    created_at: string;
+    updated_at: string;
+};

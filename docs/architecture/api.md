@@ -46,3 +46,22 @@ Validation is 422 `{message, errors: {field: [messages]}}`. 401 requires authent
 Send `Accept: application/json` and `Accept-Language: mk` or `en`. Responses include Content-Language and Vary. Macedonian is the default; React sends selected locale. Resource IDs are UUIDv7; instants use ISO 8601 UTC. Future money uses integer decimal strings and currency, never floats; no financial resource exists now.
 
 Sensitive future money/reservation writes require persisted idempotency keys scoped to organization/actor/operation, request hash checks and replay semantics. GT-002 does not add an idempotency API; repeated location POST can create separate locations, and successful switch requests each produce evidence.
+
+## GT-003 client endpoints
+
+All paths below are relative to `/api/v1/organizations/{organization UUID}/members`. Require active organization/staff context, studio.access, members.view and all-location scope. Selected-location staff are denied even with client permissions.
+
+| Method | Path                    | Additional authority / result                                              |
+| ------ | ----------------------- | -------------------------------------------------------------------------- |
+| GET    | `/`                     | Paginated default active/inactive directory; non-PII filters only          |
+| POST   | `/search`               | Same directory with bounded search/filter JSON body; browser CSRF required |
+| POST   | `/`                     | members.create; creates active profile, 201                                |
+| GET    | `/{member UUID}`        | Explicit profile, including archived history                               |
+| PATCH  | `/{member UUID}`        | members.update; profile fields; archived profile returns 409               |
+| PATCH  | `/{member UUID}/status` | members.status.manage; dedicated status-only transition                    |
+
+Search accepts page (1–10000), per_page (1–100), search (2–100 characters), status (active/inactive/archived/all), digital_access_mode (app/assisted/offline) and optional preferred_location_id UUID. Default page size 25. Search uses bound, escaped literal prefixes on first/last/full name, email and normalized phone. Search is prohibited on GET to avoid contact data in access-log URLs. List returns data/meta without notes, user/internal IDs or duplicate information. Preferred location filters/assignment and relationship serialization require locations.view.
+
+Create/profile writes accept first_name, last_name, phone, email, preferred_locale, digital_access_mode, preferred_location_id and notes. Names required for creation; contact/account optional. Notes submission additionally requires members.notes.manage; notes are returned only with members.notes.view. Status, organization ownership, user linkage, IDs/timestamps and all unknown fields are rejected on profile writes. Status endpoint accepts only status. Archived → inactive is the only restore transition; archived → active returns 422. No DELETE or account linking API.
+
+Successful create/update returns `{data: profile, meta: {duplicate_warning: boolean}}`. Warning is advisory for an exact normalized contact/name match in this tenant, never a merge or unique-contact rule. Other detail/status responses use `{data: profile}`. Phone/email are nullable and canonical; mode is descriptive, never authentication. See [client domain](../domain/studio-members.md) for bounded fields and privacy semantics.

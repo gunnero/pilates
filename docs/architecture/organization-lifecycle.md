@@ -1,6 +1,6 @@
 # Organizations, locations and staff access (GT-002)
 
-**OrganizationMembership is the relationship between an authenticated platform User and an Organization. It is not a future StudioMember/customer membership.** No customer, invitation, booking, attendance or payment aggregate is introduced here.
+**OrganizationMembership is the relationship between an authenticated platform User and an Organization. It is not a StudioMember/customer profile.** This document describes GT-002 staff lifecycle; GT-003 introduces the separate [StudioMember](../domain/studio-members.md) client domain. Invitations, booking, attendance and payments remain absent.
 
 ## Organizations
 
@@ -55,3 +55,7 @@ Every supported lifecycle mutation locks the organization row inside one Postgre
 The count invariant depends on all supported writers taking that same lock; it is not a database aggregate CHECK, and trusted direct SQL can bypass it. Operator status/bootstrap commands use the lock too. Already-running read requests may finish with their request snapshot; subsequent requests re-resolve authority, and queued mutations recheck after obtaining the lock. There are no jobs yet; future jobs must establish and clear explicit context and use this protocol.
 
 See [audit evidence](../security/audit.md), [API contract](api.md), [security review](../security/gt-002-review.md) and [verification](../development/gt-002-verification.md).
+
+## GT-003 permission extension
+
+The current explicit Owner/Administrator bundles add six client capabilities. Existing GT-002 stored grants are preserved; an audited operator adoption command enables a legacy manager deliberately. Trainer/Staff defaults remain unchanged. The catalog now contains 20 permissions; the delegation, token, owner-custody and minimum-control rules above remain intact. See [client permissions](../domain/studio-members.md).

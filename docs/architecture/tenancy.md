@@ -1,12 +1,12 @@
 # Organization isolation
 
-Organization means the studio-owning business; Location is a physical branch. Users are global identities with separate OrganizationMembership records per organization. OrganizationMembership is not a customer/StudioMember. This is shared-database/shared-schema isolation with explicit queries, not global Eloquent scopes or PostgreSQL RLS.
+Organization means the studio-owning business; Location is a physical branch. Users are global identities with separate OrganizationMembership records per organization. OrganizationMembership is not a StudioMember customer profile. This is shared-database/shared-schema isolation with explicit queries, not global Eloquent scopes or PostgreSQL RLS.
 
 1. `auth:sanctum` authenticates a session or bearer token.
 2. `ResolveOrganization` clears context and reads the route UUID.
 3. `TenantContext::resolve` queries through the user's active `organizationMemberships`, requiring an active organization. Missing, unrelated and nonactive tenants return 404.
 4. Gates require `studio.access` and the endpoint permission, intersected with token abilities. An active member without a required permission receives 403.
-5. Locations are constrained by organization and all/selected assignments. Staff queries are constrained by organization; `staff.view` intentionally exposes an organization-wide staff directory.
+5. Locations are constrained by organization and all/selected assignments. StudioMember queries require all-location scope and members.view, with organization constraints; selected-location staff are denied until actual attendance relationships exist. Preferred location is never a visibility grant. Staff queries are constrained by organization; `staff.view` intentionally exposes an organization-wide staff directory.
 6. Explicit representations omit internal IDs, emails and unauthorized grants. Context is cleared in middleware `finally`, including failures; absent context and unknown permissions deny.
 
 `GET /api/v1/me` lists only this user's active organizations with active membership and stored studio.access. It is identity bootstrap, without an additional bearer ability check; each selected context still requires token abilities. Session selection is a preference, never authority. Lifecycle writes acquire the organization row lock and recheck current authority before executing.
