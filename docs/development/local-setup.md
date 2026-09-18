@@ -1,0 +1,46 @@
+# Local development on HP
+
+The initial directory was empty and not a Git repository. GT-001 initializes main locally with no remote. Existing server PHP 8.5.4, Composer 2.10.3, Node 24.20.0, pnpm 12.3.4, PostgreSQL 18.6 and Redis 8.0.5 were inspected before changes. Port 8000 was occupied, so Laravel uses 8010. No existing application was overwritten.
+
+## Dependencies and databases
+
+Run README setup from the repository root. `scripts/local-db init` uses `/usr/lib/postgresql/18/bin` (override PG_BIN for another native installation), private `.local/postgres`, socket `.local/pg-socket`, and loopback 55432. It creates both isolated roles/databases and private environment files. It is intentionally non-destructive and refuses existing data/env files. Use `scripts/local-db start` / `stop` subsequently. There is no system service/autostart. If 55432 is occupied or initialization partially fails, inspect the private cluster and files; do not delete data to force a rerun.
+
+The shared native server on 5432 lacks a gunner role, and sudo requires interactive authentication. A separate native cluster avoids changing shared production databases or requiring Docker. Native Redis on 6379 supplies GT-prefixed cache/rate limiting only. Never call cache:clear/flush on a shared Redis database: prefixing does not make FLUSHDB safe. PostgreSQL holds sessions, jobs and business truth.
+
+Existing managed PostgreSQL can be used by configuring DB_* in private environment files instead. Have an authorized operator provision dedicated development/test roles and databases; do not reuse production endpoints. Test role/database must remain gt_test on loopback, with no DB_URL or cached config. Tests stop before destructive migrations if that safety check fails.
+
+No default account is seeded. To create a local user for manual UI checks, use `php artisan tinker` and Laravel's hidden prompt (no real password in shell history):
+
+```php
+$password = \Laravel\Prompts\password('Local-only password (12+ characters)');
+$user = \App\Models\User::create(['name' => 'Local admin', 'email' => 'admin@example.test', 'password' => $password]);
+unset($password);
+```
+
+An account without studio access correctly shows an empty access state. Studio/grant provisioning UI is deferred. Automated browser tests create a test-only organization/account in gt_test, never gt_dev. No development account was created during GT-001.
+
+## Daily work and checks
+
+Use `composer dev` and `pnpm dev` in separate terminals, open http://127.0.0.1:8010. To inspect from another computer, tunnel these loopback ports using existing authorized SSH access; do not expose public listeners. A production frontend can be exercised locally with `pnpm build` and no Vite process. Always remove a stale public/hot only after confirming Vite has stopped.
+
+`composer check` runs Pint check, Larastan level 8 without suppressions and PHPUnit against PostgreSQL. `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm build` check frontend source. `composer format` / `pnpm format` fix style. TypeScript 6 is intentional: the current stable typescript-eslint parser does not yet support TypeScript 7.
+
+Browser checks require `pnpm exec playwright install chromium`, followed by `pnpm test:e2e`. They run built assets under APP_ENV=e2e on 8011 with **real CSRF enforcement**, database sessions and database-backed rate limiting. `scripts/prepare-browser` derives a private .env.e2e from .env.testing; its guarded fixture reset can only target gt_test. Run PHPUnit then browser tests sequentially, not concurrently. No Playwright trace archives containing credentials are saved; screenshots show test data only.
+
+HP lacks some Chromium shared libraries. GT-001 extracted official Ubuntu packages under ignored `.local/browser-libs` without installing system packages. To reproduce on this HP:
+
+```bash
+mkdir -p .local/browser-debs .local/browser-libs
+cd .local/browser-debs
+apt-get download libatk1.0-0t64 libatk-bridge2.0-0t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libatspi2.0-0t64 libwayland-server0 libxrender1 libxi6 libxres1
+for package in *.deb; do dpkg-deb -x "$package" ../browser-libs; done
+cd ../..
+pnpm test:e2e
+```
+
+`scripts/browser-test` adds that directory to LD_LIBRARY_PATH only for the child test process. Other distributions should use their standard Playwright dependencies. CI installs browser dependencies inside its disposable runner.
+
+## Production boundary
+
+This is local foundation work, not a deployable business launch. Before production: reviewed HTTPS host/proxy configuration, dedicated runtime/migration DB roles, isolated Redis ACL/service, real mail setup, backups/restore verification, log/access-log redaction policy, monitoring, dependency review and customer-access lifecycle. Serve only public/. Do not commit .env files or generated data. Never use APP_ENV=testing for a browser/server deployment; that disables framework CSRF checks.

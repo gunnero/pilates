@@ -1,0 +1,14 @@
+vendor
+node_modules
+.local
+public/build
+public/hot
+storage
+bootstrap/cache
+composer.lock
+pnpm-lock.yaml
+*.php
+.env*
+.phpunit.cache
+playwright-report
+test-results

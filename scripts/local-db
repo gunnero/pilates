@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""Private native PostgreSQL cluster; never touches shared server configuration."""
+import base64
+import getpass
+import os
+from pathlib import Path
+import secrets
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+os.chdir(ROOT)
+os.umask(0o077)
+LOCAL = ROOT / '.local'
+DATA = LOCAL / 'postgres'
+SOCKET = LOCAL / 'pg-socket'
+BIN = Path(os.environ.get('PG_BIN', '/usr/lib/postgresql/18/bin'))
+PORT = '55432'
+
+def run(name, *args, **kwargs):
+    return subprocess.run([str(BIN / name), *args], check=True, **kwargs)
+
+command = sys.argv[1] if len(sys.argv) > 1 else 'start'
+if command == 'stop':
+    run('pg_ctl', '-D', str(DATA), '-m', 'fast', 'stop')
+    sys.exit()
+if command not in ('start', 'init'):
+    sys.exit('Usage: scripts/local-db [init|start|stop]')
+LOCAL.mkdir(exist_ok=True)
+SOCKET.mkdir(exist_ok=True)
+if command == 'init':
+    if DATA.exists() or (ROOT / '.env').exists() or (ROOT / '.env.testing').exists():
+        sys.exit('Refusing to overwrite database or environment. Use start for an existing setup.')
+    run('initdb', '-D', str(DATA), '--auth-local=peer', '--auth-host=scram-sha-256', '--encoding=UTF8', '--locale=C.UTF-8')
+    with (DATA / 'postgresql.conf').open('a') as conf:
+        conf.write(f"\nlisten_addresses='127.0.0.1'\nport={PORT}\nunix_socket_directories='{SOCKET}'\ntimezone='UTC'\nmax_connections=20\nshared_buffers='64MB'\n")
+status = subprocess.run([str(BIN / 'pg_ctl'), '-D', str(DATA), 'status'], stdout=subprocess.DEVNULL)
+if status.returncode:
+    run('pg_ctl', '-D', str(DATA), '-l', str(LOCAL / 'postgres.log'), '-w', 'start')
+if command == 'init':
+    for database, filename, environment in [('gt_dev', '.env', 'local'), ('gt_test', '.env.testing', 'testing')]:
+        password = secrets.token_hex(32)
+        sql = f"CREATE ROLE {database} LOGIN PASSWORD '{password}' NOSUPERUSER NOCREATEDB NOCREATEROLE; CREATE DATABASE {database} OWNER {database}; REVOKE CONNECT ON DATABASE {database} FROM PUBLIC; GRANT CONNECT ON DATABASE {database} TO {database};"
+        run('psql', '-h', str(SOCKET), '-p', PORT, '-U', getpass.getuser(), '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', input=sql, text=True, stdout=subprocess.DEVNULL)
+        template = (ROOT / '.env.example').read_text()
+        replacements = {'APP_ENV': environment, 'APP_KEY': 'base64:' + base64.b64encode(secrets.token_bytes(32)).decode(), 'DB_DATABASE': database, 'DB_USERNAME': database, 'DB_PASSWORD': password}
+        if environment == 'testing':
+            replacements.update(CACHE_STORE='array', SESSION_DRIVER='array', QUEUE_CONNECTION='sync')
+        lines = [line.split('=', 1)[0] + '=' + replacements[line.split('=', 1)[0]] if '=' in line and line.split('=', 1)[0] in replacements else line for line in template.splitlines()]
+        (ROOT / filename).write_text('\n'.join(lines) + '\n')
+    print('Created isolated gt_dev and gt_test databases and private environment files.')

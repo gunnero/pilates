@@ -1,0 +1,51 @@
+name: Foundation checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: gt_test
+          POSTGRES_PASSWORD: ci-only-postgres
+          POSTGRES_DB: gt_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gt_test -d gt_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, redis, mbstring, intl
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global pnpm@12.3.4
+      - name: Isolated CI configuration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, secrets
+          values = {'APP_ENV': 'testing', 'APP_KEY': 'base64:' + base64.b64encode(secrets.token_bytes(32)).decode(), 'DB_PORT': '5432', 'DB_DATABASE': 'gt_test', 'DB_USERNAME': 'gt_test', 'DB_PASSWORD': 'ci-only-postgres', 'CACHE_STORE': 'array', 'SESSION_DRIVER': 'array'}
+          lines = []
+          for line in Path('.env.example').read_text().splitlines():
+              key = line.split('=', 1)[0]
+              lines.append(key + '=' + values[key] if key in values else line)
+          Path('.env.testing').write_text('\n'.join(lines) + '\n')
+          PY
+      - run: composer install --no-interaction --prefer-dist
+      - run: pnpm install --frozen-lockfile
+      - run: composer validate --strict
+      - run: composer check
+      - run: pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - run: composer audit --locked
+      - run: pnpm audit
+      - run: scripts/secrets-check

@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import os
+import subprocess
+
+root = Path(__file__).resolve().parent.parent
+os.chdir(root)
+os.umask(0o077)
+source = root / '.env.testing'
+if not source.exists():
+    raise SystemExit('Browser tests require .env.testing; see local setup or CI configuration.')
+replacements = {'APP_ENV': 'e2e', 'APP_URL': 'http://127.0.0.1:8011', 'APP_DEBUG': 'false', 'SESSION_DRIVER': 'database', 'SESSION_SECURE_COOKIE': 'false', 'SESSION_COOKIE': 'gt_e2e_session', 'CACHE_STORE': 'database', 'SANCTUM_STATEFUL_DOMAINS': '127.0.0.1:8011', 'MAIL_MAILER': 'array'}
+lines = []
+for line in source.read_text().splitlines():
+    key = line.split('=', 1)[0]
+    if key in replacements:
+        line = key + '=' + replacements.pop(key)
+    lines.append(line)
+lines += [key + '=' + value for key, value in replacements.items()]
+(root / '.env.e2e').write_text('\n'.join(lines) + '\n')
+subprocess.run(['php', 'tests/browser/seed.php'], check=True)
