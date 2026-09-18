@@ -18,7 +18,7 @@ $user = \App\Models\User::create(['name' => 'Local admin', 'email' => 'admin@exa
 unset($password);
 ```
 
-An account without studio access correctly shows an empty access state. Studio/grant provisioning UI is deferred. Automated browser tests create a test-only organization/account in gt_test, never gt_dev. No development account was created during GT-001.
+An account without studio access correctly shows an empty access state. User invitations and membership creation UI are deferred. Trusted organization provisioning uses the commands below. Automated browser tests create a test-only organization/account in gt_test, never gt_dev. No development account was created during GT-001.
 
 ## Daily work and checks
 
@@ -44,3 +44,16 @@ pnpm test:e2e
 ## Production boundary
 
 This is local foundation work, not a deployable business launch. Before production: reviewed HTTPS host/proxy configuration, dedicated runtime/migration DB roles, isolated Redis ACL/service, real mail setup, backups/restore verification, log/access-log redaction policy, monitoring, dependency review and customer-access lifecycle. Serve only public/. Do not commit .env files or generated data. Never use APP_ENV=testing for a browser/server deployment; that disables framework CSRF checks.
+
+## GT-002 operator commands
+
+After backing up an existing database, run `php artisan migrate` to apply the incremental migration. Never use migrate:fresh on gt_dev. Existing GT-001 access retains its grants and becomes Staff; it is not automatically promoted. The migration checks legacy controlled values and fails rather than silently altering invalid permissions/settings.
+
+```bash
+php artisan gt:organization-create 'Studio name' existing-user@example.test
+php artisan gt:owner-bootstrap ORGANIZATION_UUID USER_UUID --reason='GT-001 adoption'
+php artisan gt:organization-status ORGANIZATION_UUID suspended --reason='Operator restriction'
+php artisan gt:organization-status ORGANIZATION_UUID active --reason='Restriction resolved'
+```
+
+These are trusted host-operator capabilities, not ordinary user authorization endpoints. Create uses an existing identity and grants its explicit Owner bundle; it never creates credentials. Bootstrap runs only when no active owner exists and cannot restore a revoked membership. Status recovery requires an active owner. Operator actions record null actor with source=operator and bounded reason where required. Keep reasons free of secrets/personal incident details. No commands create a default password, send invitations, or configure mail. New organizations start with Macedonian, Europe/Skopje and MKD; API settings accept other valid IANA timezones.

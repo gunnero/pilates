@@ -2,27 +2,28 @@
 
 namespace App\Support;
 
+use App\Models\Location;
 use App\Models\Organization;
+use App\Models\OrganizationMembership;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 
 final class TenantContext
 {
     private ?Organization $organization = null;
 
-    private ?int $userId = null;
-
-    /** @var list<string> */
-    private array $permissions = [];
+    private ?OrganizationMembership $membership = null;
 
     public function resolve(User $user, string $publicId): void
     {
         $this->clear();
-        // Membership and organization are selected together; another tenant is indistinguishable from absence.
-        $organization = $user->organizations()->where('organizations.public_id', $publicId)->firstOrFail();
-        $this->organization = $organization;
-        $this->userId = $user->id;
-        $this->permissions = $organization->pivot->permissions;
+        $membership = $user->organizationMemberships()->where('status', MembershipStatus::Active)
+            ->whereHas('organization', fn (Builder $query) => $query->where('public_id', $publicId)->where('status', OrganizationStatus::Active))
+            ->with('organization')->firstOrFail();
+        $this->organization = $membership->organization;
+        $this->membership = $membership;
     }
 
     public function organization(): Organization
@@ -30,15 +31,36 @@ final class TenantContext
         return $this->organization ?? throw new LogicException('Tenant context is required.');
     }
 
+    public function membership(): OrganizationMembership
+    {
+        return $this->membership ?? throw new LogicException('Tenant context is required.');
+    }
+
     public function permits(User $user, Permission $permission): bool
     {
-        return $this->organization !== null && $this->userId === $user->id && in_array($permission->value, $this->permissions, true);
+        return $this->membership !== null && $this->membership->user_id === $user->id && in_array($permission->value, $this->membership->permissions, true);
+    }
+
+    /** @return list<string> */
+    public function permissions(User $user): array
+    {
+        return array_values(array_filter($this->membership()->permissions, fn (string $permission): bool => $user->currentAccessToken() === null || $user->tokenCan($permission)));
+    }
+
+    /** @return Builder<Location> */
+    public function locations(): Builder
+    {
+        $query = Location::query()->where('organization_id', $this->organization()->id);
+        if ($this->membership()->location_scope === LocationScope::Selected) {
+            $query->whereIn('id', DB::table('membership_locations')->select('location_id')->where('organization_id', $this->organization()->id)->where('organization_membership_id', $this->membership()->id));
+        }
+
+        return $query;
     }
 
     public function clear(): void
     {
         $this->organization = null;
-        $this->userId = null;
-        $this->permissions = [];
+        $this->membership = null;
     }
 }

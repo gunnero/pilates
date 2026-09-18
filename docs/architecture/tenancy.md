@@ -1,25 +1,23 @@
 # Organization isolation
 
-Organization means the studio-owning business; location will mean a branch within that organization. Users are global identities and may have access to several organizations. This is a shared-database/shared-schema design.
+Organization means the studio-owning business; Location is a physical branch. Users are global identities with separate OrganizationMembership records per organization. OrganizationMembership is not a customer/StudioMember. This is shared-database/shared-schema isolation with explicit queries, not global Eloquent scopes or PostgreSQL RLS.
 
-Implemented request sequence:
+1. `auth:sanctum` authenticates a session or bearer token.
+2. `ResolveOrganization` clears context and reads the route UUID.
+3. `TenantContext::resolve` queries through the user's active `organizationMemberships`, requiring an active organization. Missing, unrelated and nonactive tenants return 404.
+4. Gates require `studio.access` and the endpoint permission, intersected with token abilities. An active member without a required permission receives 403.
+5. Locations are constrained by organization and all/selected assignments. Staff queries are constrained by organization; `staff.view` intentionally exposes an organization-wide staff directory.
+6. Explicit representations omit internal IDs, emails and unauthorized grants. Context is cleared in middleware `finally`, including failures; absent context and unknown permissions deny.
 
-1. `auth:sanctum` authenticates the web session or bearer token.
-2. `ResolveOrganization` reads a UUID route parameter.
-3. `TenantContext::resolve` queries **through the authenticated user's organizations relationship**, joining the access relation. Unknown and unrelated organizations both return 404.
-4. A Gate checks a named permission. The context endpoint requires `studio.access`; membership alone is insufficient (403).
-5. Explicit response fields serialize the authorized organization. Internal IDs, grants and other organizations are not serialized here.
-6. Context is scoped to the request and cleared before resolution and in middleware `finally`, including failed requests. Missing context throws; unknown permissions deny.
+`GET /api/v1/me` lists only this user's active organizations with active membership and stored studio.access. It is identity bootstrap, without an additional bearer ability check; each selected context still requires token abilities. Session selection is a preference, never authority. Lifecycle writes acquire the organization row lock and recheck current authority before executing.
 
-`GET /api/v1/me` is the intentional bootstrap query: it lists only the authenticated user's organization IDs/names so a studio can be selected. `organizations` and `organization_user` are access-control primitives, not general unscoped domain repositories. No public membership or permission write endpoint exists. Fixture writes are trusted test-only code.
+## Required for future tenant aggregates
 
-## Required for each future tenant-owned aggregate
+- Non-null indexed organization ownership; composite `(organization_id,parent_id)` foreign keys when linking tenant-owned parents. `membership_locations` demonstrates this now.
+- Query from verified context before resolving a resource UUID; never globally find and then assume authentication scoped it. Apply all location constraints before pagination/counting.
+- Derive organization/actor from context; reject unknown write fields and tenant reassignment. Public UUIDs are not authorization.
+- Authorize before reading/serializing sensitive fields and before mutation. Do not use frontend filtering as access control.
+- Jobs/exports/CLI must establish explicit organization and appropriate authority, clear context and follow the documented lock protocol. Trusted operator recovery is separate from application-user authority.
+- Add positive and guessed-UUID, nonactive membership/organization, permissions, selected-scope, stale-context and competing-transaction tests.
 
-- Non-null `organization_id` with an indexed foreign key. Nested associations must use composite `(organization_id, parent_id)` foreign keys backed by corresponding unique constraints, preventing mixed-tenant links even in trusted writes.
-- Query from the resolved organization's relationship or an explicit organization predicate; never perform a global `find(public_id)` and assume authentication scopes it. Use tenant-constrained route binding for nested resources.
-- Derive organization and actor from trusted context on creation; reject tenant reassignment. Never accept them as mass-assigned request fields.
-- Authorize before reading/serializing sensitive fields and before mutation. A resource UUID is an identifier, not access authority.
-- Jobs, CLI operations and exports must accept an explicit organization, re-establish authorization as appropriate, and clear context. No implicit fallback organization or global bypass.
-- Add positive tests plus guessed foreign UUIDs, missing context, cross-organization associations, revoked membership, different permissions, and concurrent job/request context reuse tests.
-
-There is deliberately **no claim of automatic global Eloquent scoping or PostgreSQL row-level security**. The narrow current routes prove explicit isolation. Future modules must follow these rules; RLS may add defense in depth after connection/worker semantics are designed. Global platform administration must later be a separate, explicit, audited capability, never `Gate::before` granting all tenant operations.
+Future global administration needs a separate audited capability, never a blanket Gate bypass. See [lifecycle decisions](organization-lifecycle.md) for request snapshot limits, location status handling, migration adoption and last-owner guarantees.

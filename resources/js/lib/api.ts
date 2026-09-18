@@ -41,6 +41,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
     get: <T>(path: string, signal?: AbortSignal) =>
         request<T>(path, { signal }),
+    async patch<T>(path: string, data: unknown): Promise<T> {
+        await request<void>('/sanctum/csrf-cookie');
+        return request<T>(path, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    },
     async post<T = void>(path: string, data: unknown = {}): Promise<T> {
         await request<void>('/sanctum/csrf-cookie');
         return request<T>(path, { method: 'POST', body: JSON.stringify(data) });
@@ -50,6 +57,7 @@ export type Profile = {
     id: string;
     name: string;
     organizations: { id: string; name: string }[];
+    active_organization_id: string | null;
 };
 export type Organization = {
     id: string;
@@ -57,4 +65,43 @@ export type Organization = {
     locale: string;
     timezone: string;
     currency: string;
+    slug: string;
+    status: 'active' | 'inactive' | 'suspended';
+    permissions: string[];
+    membership_id: string;
+    location_scope: 'all' | 'selected';
 };
+
+export type Location = {
+    id: string;
+    name: string;
+    address: string | null;
+    city: string | null;
+    country_code: string | null;
+    status: 'active' | 'inactive';
+};
+export type StaffMembership = {
+    id: string;
+    user: { id: string; name: string };
+    role: 'owner' | 'administrator' | 'trainer' | 'staff';
+    status: 'active' | 'suspended' | 'revoked';
+    permissions?: string[];
+    location_scope: 'all' | 'selected';
+    location_ids?: string[];
+};
+export type Page<T> = {
+    data: T[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+};
+export function errorMessage(error: unknown): string {
+    return error instanceof ApiError
+        ? Object.values(error.errors ?? {})
+              .flat()
+              .join(' ') || error.message
+        : i18n.t('error');
+}

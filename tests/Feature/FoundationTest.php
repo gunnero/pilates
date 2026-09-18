@@ -34,7 +34,7 @@ class FoundationTest extends TestCase
     private function grant(User $user, Organization $organization, array $permissions = ['studio.access']): void
     {
         // Bootstrap fixtures use a trusted database write, not a public permission-management API.
-        DB::table('organization_user')->insert(['organization_id' => $organization->id, 'user_id' => $user->id, 'permissions' => json_encode($permissions), 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('organization_memberships')->insert(['organization_id' => $organization->id, 'user_id' => $user->id, 'permissions' => json_encode($permissions), 'created_at' => now(), 'updated_at' => now()]);
     }
 
     public function test_application_boots_with_security_headers_and_postgresql(): void
@@ -89,7 +89,7 @@ class FoundationTest extends TestCase
         $b = Organization::create(['name' => 'Studio B']);
         $this->grant($alice, $a);
         $this->grant($bob, $b);
-        $this->actingAs($alice)->getJson('/api/v1/organizations/'.$a->public_id.'/context')->assertOk()->assertExactJson(['data' => ['id' => $a->public_id, 'name' => 'Studio A', 'locale' => 'mk', 'timezone' => 'Europe/Skopje', 'currency' => 'MKD']]);
+        $this->actingAs($alice)->getJson('/api/v1/organizations/'.$a->public_id.'/context')->assertOk()->assertJsonPath('data.id', $a->public_id)->assertJsonPath('data.currency', 'MKD');
         $this->getJson('/api/v1/organizations/'.$b->public_id.'/context')->assertNotFound();
         $this->getJson('/api/v1/organizations/'.Str::uuid7().'/context')->assertNotFound();
         $this->getJson('/api/v1/organizations/'.$a->id.'/context')->assertNotFound();
@@ -97,7 +97,7 @@ class FoundationTest extends TestCase
         $this->assertFalse(Gate::forUser($alice)->allows('studio.access')); // request context was cleared
         $this->grant($bob, $a, []);
         $this->actingAs($bob)->getJson('/api/v1/organizations/'.$a->public_id.'/context')->assertForbidden();
-        DB::table('organization_user')->where('user_id', $bob->id)->where('organization_id', $b->id)->delete();
+        DB::table('organization_memberships')->where('user_id', $bob->id)->where('organization_id', $b->id)->delete();
         $this->getJson('/api/v1/organizations/'.$b->public_id.'/context')->assertNotFound();
     }
 

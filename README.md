@@ -1,6 +1,6 @@
 # GT / GrupniTreninzi.mk
 
-A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-001 is the technical foundation only.** Organization context, authentication, independent permissions, localization and an honest admin shell exist. Booking, attendance, payments and business dashboards do not.
+A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-002 adds organization, location and staff-access lifecycles to the GT-001 foundation.** Authentication, tenant isolation, explicit permissions, transactional audit evidence and localized management screens are implemented. OrganizationMembership means staff access, not a customer membership. Booking, attendance, payments and business dashboards remain unimplemented.
 
 ## Stack and requirements
 
@@ -40,7 +40,9 @@ pnpm exec playwright install chromium
 pnpm test:e2e          # sequentially AFTER PHPUnit; resets ONLY gt_test
 composer audit --locked
 pnpm audit
+pnpm peers check
 scripts/secrets-check
+git diff --check
 ```
 
 Formatting: `composer format` and `pnpm format`. CI runs these checks plus Chromium on desktop/mobile viewports. For the headless HP's project-local browser libraries, see [local setup](docs/development/local-setup.md). Tests never need production credentials.
@@ -62,4 +64,4 @@ docs/                 Architecture, domain, security and development decisions
 .github/workflows/    Verification pipeline; no deployment job
 ```
 
-Read [system overview](docs/architecture/overview.md), [tenant strategy](docs/architecture/tenancy.md), [API conventions](docs/architecture/api.md), and [GT-001 verification](docs/development/verification.md). No production deployment, remote push, or GT-002 implementation is included.
+Read [system overview](docs/architecture/overview.md), [tenant strategy](docs/architecture/tenancy.md), [API conventions](docs/architecture/api.md), [organization lifecycle](docs/architecture/organization-lifecycle.md), and [GT-002 verification](docs/development/gt-002-verification.md). [GT-001 verification](docs/development/verification.md) is historical. No production deployment, remote push, or GT-003 implementation is included.

@@ -1,10 +1,11 @@
 <?php
 
 use App\Models\Organization;
+use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Support\StaffRole;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 
 require __DIR__.'/../../vendor/autoload.php';
 $app = require __DIR__.'/../../bootstrap/app.php';
@@ -19,7 +20,13 @@ if ($app->configurationIsCached() || ! $app->environment('e2e')
     throw new RuntimeException('Browser fixtures may only reset the isolated loopback gt_test database.');
 }
 Artisan::call('migrate:fresh', ['--force' => true]);
-$user = User::factory()->create(['name' => 'Test Trainer', 'email' => 'browser@example.test', 'password' => 'Browser-fixture-123!']);
-$organization = Organization::create(['name' => 'Test Studio']);
-DB::table('organization_user')->insert(['organization_id' => $organization->id, 'user_id' => $user->id, 'permissions' => '["studio.access"]', 'created_at' => now(), 'updated_at' => now()]);
+$user = User::factory()->create(['name' => 'Test Owner', 'email' => 'browser@example.test', 'password' => 'Browser-fixture-123!']);
+$trainer = User::factory()->create(['name' => 'Jovana', 'email' => 'trainer@example.test']);
+foreach (['Test Studio', 'Other Studio'] as $name) {
+    $organization = Organization::create(['name' => $name]);
+    $membership = new OrganizationMembership;
+    $membership->forceFill(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $organization->id, 'user_id' => $trainer->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Trainer->permissions()])->save();
+}
 echo "Isolated browser fixtures prepared.\n";

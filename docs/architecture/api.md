@@ -1,24 +1,48 @@
 # API contract
 
-Version application endpoints under `/api/v1`; breaking contracts require a new major namespace. Browser-only session/recovery endpoints remain `/auth/*`; Sanctum uses `/sanctum/csrf-cookie`. HTML routes return the React entry point. Unknown API/auth URLs return bounded errors, not the SPA.
+Version application endpoints under `/api/v1`. Browser session/recovery endpoints remain `/auth/*`; Sanctum initializes CSRF through `/sanctum/csrf-cookie`. Unknown API/auth routes return bounded errors, not React HTML. Auth/API responses are no-store.
 
-Implemented routes:
+## Identity and authentication
 
-| Method | Route                                | Authority/result                                         |
-| ------ | ------------------------------------ | -------------------------------------------------------- |
-| GET    | /up                                  | Framework liveness; no application details               |
-| GET    | /sanctum/csrf-cookie                 | First-party CSRF initialization, 204                     |
-| POST   | /auth/login                          | Validated credentials, CSRF, throttled, 204              |
-| POST   | /auth/logout                         | Session auth, CSRF, 204                                  |
-| POST   | /auth/forgot-password                | CSRF, throttled, generic 200 message                     |
-| POST   | /auth/reset-password                 | CSRF, valid broker token, strong password, 200 message   |
-| GET    | /api/v1/me                           | Authenticated minimal profile + own organization choices |
-| GET    | /api/v1/organizations/{uuid}/context | Auth, membership, studio.access, settings only           |
+| Method | Route                   | Authority/result                                                                            |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------- |
+| GET    | `/up`                   | Framework liveness                                                                          |
+| GET    | `/sanctum/csrf-cookie`  | First-party CSRF initialization, 204                                                        |
+| POST   | `/auth/login`           | Credentials, CSRF, throttled, 204                                                           |
+| POST   | `/auth/logout`          | Session, CSRF, 204                                                                          |
+| POST   | `/auth/forgot-password` | CSRF, throttled, generic 200                                                                |
+| POST   | `/auth/reset-password`  | CSRF, valid broker token, strong password, 200                                              |
+| GET    | `/api/v1/me`            | Profile, own active accessible organization choices, validated session selection preference |
 
-Success resources use `{ "data": ... }`; no-content operations use 204. Message-only recovery responses use `{ "message": "..." }`. Validation is Laravel's 422 `{message, errors: {field: [messages]}}`. 401 means authentication required; 403 means insufficient permission; unrelated/missing tenant is 404; 419 means expired/missing CSRF; 429 means throttled and includes Retry-After. Server errors are generic; clients must branch on status/field keys rather than localized prose. Auth/API responses are no-store. Exception details/SQL/bindings never enter API responses.
+## Organization endpoints
 
-Use Accept: application/json and Accept-Language: mk or en. Responses include Content-Language and Vary: Accept-Language. Macedonian is the default for absent/unsupported preferences. Web client sends selected locale explicitly. Resource IDs are UUIDv7 strings; ISO 8601 UTC instants include a timezone. Future money uses `{amount_minor: "125000", currency: "MKD"}`. No financial field exists now.
+All paths below are relative to `/api/v1/organizations/{organization UUID}`. Every route requires authentication, active organization and membership, `studio.access`, and any listed additional authority. Token abilities intersect stored grants. Stateful browser mutations require CSRF.
 
-Future lists use Laravel resource pagination: data + links + meta, default 25 and max 100, deterministic sorting including an ID tie-breaker, all filters scoped before pagination. `/me` organization choices are currently a small unpaginated identity bootstrap list; revisit for platform-scale users.
+| Method | Path                         | Additional authority/result                                                                        |
+| ------ | ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| GET    | `/context`                   | Settings, own effective permissions, membership UUID and location scope                            |
+| POST   | `/switch`                    | Empty body; audited, verified selection; web session preference                                    |
+| GET    | `/`                          | `organizations.view`; settings                                                                     |
+| PATCH  | `/`                          | `organizations.manage`; name, locale, timezone, currency, active/inactive status                   |
+| GET    | `/locations`                 | `locations.view`; scoped paginated list                                                            |
+| POST   | `/locations`                 | `locations.manage` and all-location scope; create, 201                                             |
+| GET    | `/locations/{location UUID}` | `locations.view`; scoped location                                                                  |
+| PATCH  | `/locations/{location UUID}` | `locations.manage`; scoped location details/status                                                 |
+| GET    | `/staff`                     | `staff.view`; organization-wide paginated staff directory                                          |
+| GET    | `/staff/{membership UUID}`   | `staff.view`; organization-scoped membership                                                       |
+| PATCH  | `/staff/{membership UUID}`   | `staff.manage`; status changes, plus `permissions.manage` for role/grants/scope/assignment changes |
+| GET    | `/permissions`               | `permissions.view`; finite permission catalog and explicit role bundles                            |
 
-Future sensitive writes (payments/corrections, reservation claims, waiting-list promotion) require persisted idempotency keys scoped to organization, actor and operation, request-body hash validation, response replay and conflict for reuse with different content. PostgreSQL uniqueness and transactions make retries safe; Redis is not the idempotency ledger. Define retention and replay semantics with each endpoint. No idempotency API is implemented in GT-001.
+Additional delegation, owner and selected-location restrictions apply; see [lifecycle](organization-lifecycle.md). Inactive locations are visible only to scoped location managers. Staff grants require permissions.view; assignment UUIDs require permissions.manage and are intersected with the viewer's own scope. Internal IDs and staff emails are never serialized.
+
+PATCH uses partial fields; a supplied permissions array replaces the full grant set, and supplied location_ids replace selected assignments (at most 20 distinct UUIDs). Changing role without a permissions array applies the role's bundle. Unknown write fields are rejected. There are no DELETE, invitation, user-creation or membership-creation endpoints. Organization suspension/recovery is a trusted operator command.
+
+## Envelopes and validation
+
+Success resources use `{data: ...}`. Lists use `{data: [...], meta: {current_page, last_page, per_page, total}}`, default 25/max 100, ordered by internal ID after tenant/location constraints. GT-002 uses this minimal pagination envelope rather than the future Laravel resource links proposal; no internal IDs appear in it. `/me` remains a small unpaginated identity bootstrap list; revisit for platform-scale users.
+
+Validation is 422 `{message, errors: {field: [messages]}}`. 401 requires authentication; 403 denies authority; 404 hides unknown/foreign/nonactive organization or unassigned/foreign resource; 409 rejects last-owner removal; 419 means invalid CSRF; 429 is throttled with Retry-After. Server errors are generic. Clients branch on status and field keys, not translated prose. Settings accept mk/en, MKD and valid IANA timezone. Location fields are name ≤160, address ≤300, city ≤100 and uppercase two-letter country code. All enums and grant lists are finite.
+
+Send `Accept: application/json` and `Accept-Language: mk` or `en`. Responses include Content-Language and Vary. Macedonian is the default; React sends selected locale. Resource IDs are UUIDv7; instants use ISO 8601 UTC. Future money uses integer decimal strings and currency, never floats; no financial resource exists now.
+
+Sensitive future money/reservation writes require persisted idempotency keys scoped to organization/actor/operation, request hash checks and replay semantics. GT-002 does not add an idempotency API; repeated location POST can create separate locations, and successful switch requests each produce evidence.

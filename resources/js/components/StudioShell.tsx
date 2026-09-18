@@ -8,6 +8,9 @@ import {
 } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, type Organization, type Profile } from '../lib/api';
+import { OrganizationSettings } from './OrganizationSettings';
+import { Locations } from './Locations';
+import { Staff } from './Staff';
 import { LanguagePicker } from './LanguagePicker';
 const sections = [
     'dashboard',
@@ -19,6 +22,8 @@ const sections = [
     'trainers',
     'reports',
     'settings',
+    'locations',
+    'staff',
 ] as const;
 export function StudioShell() {
     const { t } = useTranslation();
@@ -38,7 +43,13 @@ export function StudioShell() {
         api.get<{ data: Profile }>('/api/v1/me', controller.signal)
             .then(({ data }) => {
                 setProfile(data);
-                setSelected(data.organizations[0]?.id ?? '');
+                setSelected((current) =>
+                    data.organizations.some((item) => item.id === current)
+                        ? current
+                        : (data.active_organization_id ??
+                          data.organizations[0]?.id ??
+                          ''),
+                );
                 setError('');
             })
             .catch((err: unknown) => {
@@ -74,6 +85,24 @@ export function StudioShell() {
             });
         return () => controller.abort();
     }, [selected, retry]);
+    const [switching, setSwitching] = useState(false);
+    async function switchOrganization(id: string) {
+        setSwitching(true);
+        setOrganization(null);
+        setTenantError('');
+        try {
+            await api.post(`/api/v1/organizations/${id}/switch`);
+            setSelected(id);
+            setRetry((value) => value + 1);
+        } catch {
+            setTenantError('accessDenied');
+        } finally {
+            setSwitching(false);
+        }
+    }
+    function refreshContext() {
+        setRetry((value) => value + 1);
+    }
     async function logout() {
         setLoggingOut(true);
         try {
@@ -129,13 +158,16 @@ export function StudioShell() {
                                 {String(index + 1).padStart(2, '0')}
                             </span>
                             <span>{t(item)}</span>
-                            {index > 0 && (
-                                <span
-                                    className="nav-dot"
-                                    title={t('soon')}
-                                    aria-label={t('soon')}
-                                />
-                            )}
+                            {index > 0 &&
+                                !['settings', 'locations', 'staff'].includes(
+                                    item,
+                                ) && (
+                                    <span
+                                        className="nav-dot"
+                                        title={t('soon')}
+                                        aria-label={t('soon')}
+                                    />
+                                )}
                         </NavLink>
                     ))}
                 </nav>
@@ -175,15 +207,16 @@ export function StudioShell() {
                             <p className="eyebrow">{t('studioAdmin')}</p>
                             <h1>{t(known ? section : 'notFound')}</h1>
                         </div>
-                        {profile.organizations.length > 0 && (
+                        {profile.organizations.length > 1 && (
                             <label className="studio-picker">
                                 <span>{t('chooseStudio')}</span>
                                 <select
                                     value={selected}
+                                    disabled={switching}
                                     onChange={(event) => {
-                                        setSelected(event.target.value);
-                                        setOrganization(null);
-                                        setTenantError('');
+                                        void switchOrganization(
+                                            event.target.value,
+                                        );
                                     }}
                                 >
                                     {profile.organizations.map((item) => (
@@ -209,8 +242,25 @@ export function StudioShell() {
                                 {t('retry')}
                             </button>
                         </div>
-                    ) : !ready ? (
+                    ) : !ready || switching ? (
                         <p role="status">{t('loading')}</p>
+                    ) : section === 'settings' ? (
+                        <OrganizationSettings
+                            key={organization.id}
+                            organization={organization}
+                            onChanged={refreshContext}
+                        />
+                    ) : section === 'locations' ? (
+                        <Locations
+                            key={organization.id}
+                            organization={organization}
+                        />
+                    ) : section === 'staff' ? (
+                        <Staff
+                            key={organization.id}
+                            organization={organization}
+                            onChanged={refreshContext}
+                        />
                     ) : (
                         <section className="welcome-panel">
                             <div className="panel-symbol" aria-hidden="true">

@@ -6,7 +6,7 @@ use App\Models\Concerns\HasPublicId;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\Contracts\HasAbilities;
@@ -40,9 +40,9 @@ class User extends Authenticatable
         return Attribute::make(set: fn (string $value): string => mb_strtolower(trim($value)));
     }
 
-    /** @return BelongsToMany<Organization, $this, OrganizationAccess> */
-    public function organizations(): BelongsToMany
+    /** @return HasMany<OrganizationMembership, $this> */
+    public function organizationMemberships(): HasMany
     {
-        return $this->belongsToMany(Organization::class)->using(OrganizationAccess::class)->withPivot('permissions')->withTimestamps();
+        return $this->hasMany(OrganizationMembership::class);
     }
 }

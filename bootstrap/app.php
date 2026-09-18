@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $status = $response->getStatusCode();
                 $headers = array_filter(['Retry-After' => $response->headers->get('Retry-After')]);
 
-                return response()->json(['message' => __('errors.'.(in_array($status, [401, 403, 404, 419, 429], true) ? $status : 500))], $status, $headers);
+                return response()->json(['message' => __('errors.'.(in_array($status, [401, 403, 404, 409, 419, 429], true) ? $status : 500))], $status, $headers);
             }
 
             return $response;

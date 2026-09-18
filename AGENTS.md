@@ -2,9 +2,10 @@
 
 Read README.md and docs/architecture/overview.md before extending this foundation.
 
-- Work only in the requested task; GT-001 contains no booking, attendance or payment module.
+- Work only in the requested task; GT-002 implements organization/location/staff lifecycle only; no customer, booking, attendance or payment module.
 - PostgreSQL is authoritative. Redis is cache/rate limiting only. Never flush the shared Redis service.
 - Every tenant request must authenticate, resolve membership through TenantContext, then authorize a permission before serializing data. No implicit Super Admin bypass.
+- Lifecycle mutations must take the organization row lock, re-resolve current authority, and persist audit evidence in the same transaction. Read docs/architecture/organization-lifecycle.md before extending these writers.
 - Never take organization_id, permissions, role, or actor identity from mass-assigned request input.
 - Use UUIDv7 public IDs, UTC timestamps and organization locale/timezone/currency settings.
 - Do not read or print .env secrets. Do not run tests against gt_dev or another project's database.

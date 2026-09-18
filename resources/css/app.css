@@ -500,3 +500,98 @@ h2 {
         gap: 1.5rem;
     }
 }
+
+.management-panel {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 2rem;
+}
+.management-panel h2 {
+    font-size: 1.4rem;
+}
+.section-heading,
+.record-row,
+.pagination,
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+.management-form {
+    max-width: 560px;
+}
+.management-form fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+.management-form label {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+}
+.management-form .permission-list {
+    border: 1px solid var(--line);
+    padding: 1rem;
+    border-radius: 8px;
+}
+.permission-list label {
+    display: flex;
+    align-items: center;
+}
+.permission-list input {
+    width: auto;
+}
+.record-row {
+    padding: 1.4rem 0;
+    border-bottom: 1px solid var(--line);
+    align-items: flex-start;
+}
+.record-row h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1rem;
+}
+.record-row p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    overflow-wrap: anywhere;
+}
+.record-row > div {
+    min-width: 0;
+}
+.status-badge {
+    font-size: 0.7rem;
+    background: #eaf0e8;
+    border-radius: 12px;
+    padding: 0.25rem 0.6rem;
+}
+.permission-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.7rem;
+    list-style: none;
+    padding: 0;
+    font-size: 0.72rem;
+    color: var(--muted);
+}
+.pagination {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+}
+@media (max-width: 640px) {
+    .management-panel {
+        padding: 1.2rem;
+    }
+    .section-heading {
+        flex-wrap: wrap;
+    }
+    .record-row {
+        flex-wrap: wrap;
+    }
+}
