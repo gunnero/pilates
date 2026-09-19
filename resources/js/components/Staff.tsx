@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     api,
@@ -45,6 +46,25 @@ export function Staff({
             });
         return () => controller.abort();
     }, [base, page, revision, view]);
+    const trainerManagement =
+        organization.permissions.includes('trainers.manage') &&
+        organization.permissions.includes('trainers.view') &&
+        organization.location_scope === 'all';
+    async function enableTrainer(membership: StaffMembership) {
+        setBusy(true);
+        setError('');
+        try {
+            await api.post(
+                `/api/v1/organizations/${organization.id}/trainers`,
+                { membership_id: membership.id },
+            );
+            setRevision((value) => value + 1);
+        } catch (err) {
+            setError(errorMessage(err));
+        } finally {
+            setBusy(false);
+        }
+    }
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!editing) return;
@@ -183,6 +203,19 @@ export function Staff({
                                                     : 'selectedLocations',
                                             )}
                                         </p>
+                                        {Object.hasOwn(
+                                            membership,
+                                            'trainer_profile',
+                                        ) && (
+                                            <p>
+                                                {t('trainerStatus')}:{' '}
+                                                {membership.trainer_profile
+                                                    ? t(
+                                                          `memberStatus_${membership.trainer_profile.status}`,
+                                                      )
+                                                    : t('trainerNotEnabled')}
+                                            </p>
+                                        )}
                                         {membership.permissions ? (
                                             <ul
                                                 className="permission-summary"
@@ -204,6 +237,28 @@ export function Staff({
                                             </p>
                                         )}
                                     </div>
+                                    {membership.trainer_profile && (
+                                        <Link
+                                            to={`/trainers/${membership.trainer_profile.id}`}
+                                        >
+                                            {t('openTrainer')}
+                                        </Link>
+                                    )}
+                                    {trainerManagement &&
+                                        membership.trainer_profile === null &&
+                                        membership.status === 'active' && (
+                                            <button
+                                                disabled={busy}
+                                                onClick={() =>
+                                                    void enableTrainer(
+                                                        membership,
+                                                    )
+                                                }
+                                                aria-label={`${t('enableTrainer')} ${membership.user.name}`}
+                                            >
+                                                {t('enableTrainer')}
+                                            </button>
+                                        )}
                                     {manage &&
                                         membership.status !== 'revoked' && (
                                             <button

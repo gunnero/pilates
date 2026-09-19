@@ -107,6 +107,78 @@ test('real session authentication, CSRF, localization and responsive shell', asy
         await page.getByRole('button', { name: 'Save changes' }).click();
         await expect(trainerRow).toContainText(label);
     }
+    const teacherName = `Teacher ${testInfo.project.name}`;
+    const teachingRow = page.getByRole('article').filter({
+        has: page.getByRole('heading', { name: teacherName, exact: true }),
+    });
+    await teachingRow
+        .getByRole('button', {
+            name: `Enable as trainer ${teacherName}`,
+            exact: true,
+        })
+        .click();
+    await expect(
+        teachingRow.getByText('Trainer status: Active', { exact: true }),
+    ).toBeVisible();
+    if (testInfo.project.name === 'mobile')
+        await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('link', { name: 'Trainers', exact: true }).click();
+    await page.getByRole('searchbox').fill(teacherName);
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page
+        .getByRole('link', {
+            name: `Open trainer profile ${teacherName}`,
+            exact: true,
+        })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Trainer profile', exact: true }),
+    ).toBeVisible();
+    await page
+        .getByRole('textbox', { name: /Teaching display name/ })
+        .fill(`Jovana ${testInfo.project.name}`);
+    await page
+        .getByRole('textbox', { name: /Short bio/ })
+        .fill('Fixture: Pilates instructor');
+    await page
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', {
+            name: `Jovana ${testInfo.project.name}`,
+            exact: true,
+        }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Deactivate trainer', exact: true })
+        .click();
+    await expect(
+        page.getByRole('definition').filter({ hasText: /^Inactive$/ }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole('definition').filter({ hasText: /^Active$/ }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Activate trainer', exact: true })
+        .click();
+    await expect(
+        page.getByRole('button', { name: 'Deactivate trainer', exact: true }),
+    ).toBeEnabled();
+    await expect(
+        page.getByRole('definition').filter({ hasText: /^Inactive$/ }),
+    ).toHaveCount(0);
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
+    await page.screenshot({
+        path: `test-results/${testInfo.project.name}-trainer-profile.png`,
+        fullPage: true,
+    });
+    await page
+        .getByRole('link', { name: 'Manage staff access', exact: true })
+        .click();
     await page.screenshot({
         path: `test-results/${testInfo.project.name}-staff.png`,
         fullPage: true,

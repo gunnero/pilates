@@ -65,3 +65,23 @@ Search accepts page (1–10000), per_page (1–100), search (2–100 characters)
 Create/profile writes accept first_name, last_name, phone, email, preferred_locale, digital_access_mode, preferred_location_id and notes. Names required for creation; contact/account optional. Notes submission additionally requires members.notes.manage; notes are returned only with members.notes.view. Status, organization ownership, user linkage, IDs/timestamps and all unknown fields are rejected on profile writes. Status endpoint accepts only status. Archived → inactive is the only restore transition; archived → active returns 422. No DELETE or account linking API.
 
 Successful create/update returns `{data: profile, meta: {duplicate_warning: boolean}}`. Warning is advisory for an exact normalized contact/name match in this tenant, never a merge or unique-contact rule. Other detail/status responses use `{data: profile}`. Phone/email are nullable and canonical; mode is descriptive, never authentication. See [client domain](../domain/studio-members.md) for bounded fields and privacy semantics.
+
+## GT-004 trainer endpoints
+
+Paths are relative to `/api/v1/organizations/{organization UUID}/trainers`. Require active staff/organization context, studio.access and trainers.view; selected viewers receive only shared active-location staff profiles. All mutations also require trainers.manage and all-location scope.
+
+| Method | Path                        | Result                                                                      |
+| ------ | --------------------------- | --------------------------------------------------------------------------- |
+| GET    | `/`                         | Paginated directory, both active/inactive by default; no search text in URL |
+| POST   | `/search`                   | Same directory with JSON body search/filters                                |
+| POST   | `/`                         | Enable an existing active membership; 201, duplicate 409                    |
+| GET    | `/{trainer UUID}`           | Operational detail, including optional bio                                  |
+| PATCH  | `/{trainer UUID}`           | Partial operational display_name/bio update                                 |
+| PATCH  | `/{trainer UUID}/status`    | Explicit active/inactive transition                                         |
+| GET    | `/{trainer UUID}/locations` | Paginated currently eligible locations visible to caller                    |
+
+Enable accepts required membership_id (public UUID), optional nullable display_name (160) and bio (1000). Update accepts only display_name/bio; status accepts only status. Unknown/protected fields, relationship reassignment and access fields return 422. Nonactive target staff cannot be enabled/reactivated (422). Foreign/unshared resource UUIDs return 404, never a global existence lookup. No DELETE endpoint exists.
+
+Directory filters: page 1–10000, per_page 1–100 (default 25), status active/inactive/all, location_id UUID and POST-only search 2–100 characters. Search is a bound, escaped case-insensitive prefix on effective display name; GET search is prohibited. Location filters require a currently active location accessible to the viewer and select only eligible active trainers. Locations paging uses the same page/per_page bounds. List order is stable internal ID; no internal ID is serialized.
+
+The explicit staff representation includes id, membership_id, display_name, display_name_override, status, staff_role, staff_status, location_scope, eligible_location_count, up to five eligible_locations ({id,name}) and assignable. Detail adds bio. Eligibility/counts are viewer-scoped and refreshed from authoritative assignments/status; no auth grants, email or audit metadata appear. Existing Staff representations optionally add trainer_profile: null or {id,status}, only with all-location scope and trainers.view. See [trainer policy](../domain/trainer-profiles.md) before using any response in a future member surface.

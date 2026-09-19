@@ -12,6 +12,7 @@ import { OrganizationSettings } from './OrganizationSettings';
 import { Locations } from './Locations';
 import { Staff } from './Staff';
 import { Members } from './Members';
+import { Trainers } from './Trainers';
 import { LanguagePicker } from './LanguagePicker';
 const sections = [
     'dashboard',
@@ -130,7 +131,11 @@ export function StudioShell() {
             </main>
         );
     const section =
-        location.pathname === '/' ? 'dashboard' : location.pathname.slice(1);
+        location.pathname === '/'
+            ? 'dashboard'
+            : location.pathname.startsWith('/trainers/')
+              ? 'trainers'
+              : location.pathname.slice(1);
     const known = sections.some((item) => item === section);
     const ready = organization?.id === selected && !tenantError;
     return (
@@ -165,6 +170,7 @@ export function StudioShell() {
                                     'locations',
                                     'staff',
                                     'members',
+                                    'trainers',
                                 ].includes(item) && (
                                     <span
                                         className="nav-dot"
@@ -258,6 +264,12 @@ export function StudioShell() {
                         <Locations
                             key={organization.id}
                             organization={organization}
+                        />
+                    ) : section === 'trainers' ? (
+                        <Trainers
+                            key={organization.id}
+                            organization={organization}
+                            trainerId={location.pathname.split('/')[2]}
                         />
                     ) : section === 'members' ? (
                         <Members

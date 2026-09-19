@@ -17,10 +17,10 @@ class StudioMemberMigrationTest extends TestCase
 
     public function test_upgrade_preserves_existing_grants_and_audit_without_inventing_clients(): void
     {
-        Artisan::call('migrate:rollback', ['--step' => 1, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
         $user = User::factory()->create();
         $org = Organization::create(['name' => 'Upgrade Fixture']);
-        $permissions = array_values(array_diff(StaffRole::Owner->permissions(), StaffRole::memberPermissions()));
+        $permissions = array_values(array_diff(StaffRole::Owner->permissions(), [...StaffRole::memberPermissions(), 'trainers.view', 'trainers.manage']));
         $access = $this->membership($user, $org, StaffRole::Owner, $permissions);
         $this->actingAs($user)->patchJson($this->base($org), ['name' => 'Preserved Fixture'])->assertOk();
         $before = DB::table('audit_events')->get()->toJson();

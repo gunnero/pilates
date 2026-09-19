@@ -610,7 +610,7 @@ h2 {
     gap: 0.5rem;
     min-width: 0;
 }
-.member-form textarea {
+.management-form textarea {
     width: 100%;
     resize: vertical;
     min-height: 7rem;
@@ -670,5 +670,22 @@ h2 {
     }
     .member-status-form > * {
         width: 100%;
+    }
+}
+
+.trainer-bio {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.trainer-lifecycle {
+    margin: 1.5rem 0;
+}
+.trainer-directory .record-row h3 {
+    overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+    .trainer-directory .section-heading {
+        flex-direction: column;
+        align-items: stretch;
     }
 }

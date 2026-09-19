@@ -96,6 +96,7 @@ export type StaffMembership = {
     permissions?: string[];
     location_scope: 'all' | 'selected';
     location_ids?: string[];
+    trainer_profile?: { id: string; status: 'active' | 'inactive' } | null;
 };
 export type Page<T> = {
     data: T[];
@@ -127,4 +128,19 @@ export type StudioMember = {
     notes?: string | null;
     created_at: string;
     updated_at: string;
+};
+
+export type TrainerProfile = {
+    id: string;
+    membership_id: string;
+    display_name: string;
+    display_name_override: string | null;
+    bio?: string | null;
+    status: 'active' | 'inactive';
+    staff_role: StaffMembership['role'];
+    staff_status: StaffMembership['status'];
+    location_scope: 'all' | 'selected';
+    assignable: boolean;
+    eligible_location_count: number;
+    eligible_locations: { id: string; name: string }[];
 };

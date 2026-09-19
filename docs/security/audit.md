@@ -22,3 +22,7 @@ Future payment corrections, attendance and reservation changes must add their ow
 ## GT-003 customer evidence
 
 Added studio_member subject and member.created/profile_changed/status_changed/digital_access_changed/preferred_location_changed/notes_changed actions using the same transaction/append-only machinery. These events never copy name, phone/email or note values. Profile evidence records changed field keys plus bounded before/after contact-presence, locale and lifecycle/preference values. Notes record only changed=true. Therefore audit cannot reconstruct historical profile PII. Existing operator permission-adoption evidence contains staff grants/reason only. See [privacy review](gt-003-review.md).
+
+## GT-004 trainer evidence
+
+Subject trainer_profile uses the retained public profile UUID. trainer.enabled records membership UUID, initial status and supplied operational field names. trainer.profile_updated records changed field names only; trainer.activated/deactivated record before/after status. Display names and bios are never copied into evidence. No-op updates/status requests emit no new event. All events commit with the profile mutation under the organization lock. The append-only trigger protections and 8192-byte metadata cap apply unchanged. Trusted trainer-access adoption emits staff.permissions_changed with system actor, before/after grants and bounded operator reason.

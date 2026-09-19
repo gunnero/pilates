@@ -6,6 +6,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudioMemberController;
+use App\Http\Controllers\TrainerController;
 use App\Http\Middleware\ResolveOrganization;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/staff', [StaffController::class, 'index'])->middleware('can:staff.view');
         Route::get('/staff/{membership}', [StaffController::class, 'show'])->whereUuid('membership')->middleware('can:staff.view');
         Route::patch('/staff/{membership}', [StaffController::class, 'update'])->whereUuid('membership')->middleware('can:staff.manage');
+        Route::prefix('trainers')->middleware('can:trainers.view')->group(function (): void {
+            Route::get('/', [TrainerController::class, 'index']);
+            Route::post('/search', [TrainerController::class, 'index']);
+            Route::post('/', [TrainerController::class, 'store'])->middleware('can:trainers.manage');
+            Route::get('/{trainer}', [TrainerController::class, 'show'])->whereUuid('trainer');
+            Route::get('/{trainer}/locations', [TrainerController::class, 'locations'])->whereUuid('trainer');
+            Route::patch('/{trainer}', [TrainerController::class, 'update'])->whereUuid('trainer')->middleware('can:trainers.manage');
+            Route::patch('/{trainer}/status', [TrainerController::class, 'status'])->whereUuid('trainer')->middleware('can:trainers.manage');
+        });
         Route::prefix('members')->middleware('can:members.view')->group(function (): void {
             Route::get('/', [StudioMemberController::class, 'index']);
             Route::post('/search', [StudioMemberController::class, 'index']);

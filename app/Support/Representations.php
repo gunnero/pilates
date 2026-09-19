@@ -30,6 +30,10 @@ final class Representations
     {
         $data = ['id' => $membership->public_id, 'user' => ['id' => $membership->user->public_id, 'name' => $membership->user->name],
             'role' => $membership->role->value, 'status' => $membership->status->value, 'location_scope' => $membership->location_scope->value];
+        if ($context->membership()->location_scope === LocationScope::All && Gate::forUser($actor)->allows(Permission::TrainersView->value)) {
+            $profile = $membership->trainerProfile;
+            $data['trainer_profile'] = $profile === null ? null : ['id' => $profile->public_id, 'status' => $profile->status->value];
+        }
         if (Gate::forUser($actor)->allows(Permission::PermissionsView->value)) {
             $data['permissions'] = $membership->permissions;
         }

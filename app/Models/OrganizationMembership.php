@@ -8,8 +8,10 @@ use App\Support\MembershipStatus;
 use App\Support\StaffRole;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** Staff access only; never a studio customer membership.
+ * @property-read TrainerProfile|null $trainerProfile
  * @property StaffRole $role
  * @property MembershipStatus $status
  * @property LocationScope $location_scope
@@ -39,5 +41,11 @@ class OrganizationMembership extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /** @return HasOne<TrainerProfile, $this> */
+    public function trainerProfile(): HasOne
+    {
+        return $this->hasOne(TrainerProfile::class, 'organization_membership_id');
     }
 }

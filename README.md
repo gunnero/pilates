@@ -1,6 +1,6 @@
 # GT / GrupniTreninzi.mk
 
-A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-003 adds studio-client profiles and lifecycle to the GT-001/GT-002 foundation.** Authentication, tenant isolation, explicit permissions, transactional audit evidence and localized management screens are implemented. StudioMember is a customer who may have no account, phone or email; OrganizationMembership remains staff access. Booking, attendance, payments and business dashboards remain unimplemented.
+A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-004 adds operational trainer profiles to the organization, staff and client foundation.** Authentication, tenant isolation, explicit permissions, transactional audit evidence and localized management screens are implemented. StudioMember is a customer who may have no account, phone or email; OrganizationMembership remains staff access; TrainerProfile optionally adds teaching information without granting access. Booking, attendance, payments and business dashboards remain unimplemented.
 
 ## Stack and requirements
 
@@ -64,4 +64,4 @@ docs/                 Architecture, domain, security and development decisions
 .github/workflows/    Verification pipeline; no deployment job
 ```
 
-Read [system overview](docs/architecture/overview.md), [tenant strategy](docs/architecture/tenancy.md), [API conventions](docs/architecture/api.md), [organization lifecycle](docs/architecture/organization-lifecycle.md), [studio-client lifecycle](docs/domain/studio-members.md), and [GT-003 verification](docs/development/gt-003-verification.md). [GT-001 verification](docs/development/verification.md) is historical. GT-002 verification remains historical. No production deployment, remote push, or GT-004 implementation is included.
+Read [system overview](docs/architecture/overview.md), [tenant strategy](docs/architecture/tenancy.md), [API conventions](docs/architecture/api.md), [organization lifecycle](docs/architecture/organization-lifecycle.md), [studio-client lifecycle](docs/domain/studio-members.md), [trainer profiles](docs/domain/trainer-profiles.md), and [GT-004 verification](docs/development/gt-004-verification.md). [GT-001 verification](docs/development/verification.md) is historical. GT-002/GT-003 verification records remain historical. No production deployment, remote push, or GT-005 implementation is included.

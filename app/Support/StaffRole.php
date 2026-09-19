@@ -29,9 +29,10 @@ enum StaffRole: string
     public function permissions(): array
     {
         return match ($this) {
-            self::Owner => [...self::memberPermissions(), ...self::ownerMinimum(), 'locations.view', 'locations.manage', 'attendance.view', 'payments.view', 'payments.record', 'payments.correct', 'reports.view'],
-            self::Administrator => [...self::memberPermissions(), 'studio.access', 'organizations.view', 'organizations.manage', 'locations.view', 'locations.manage', 'staff.view', 'staff.manage', 'permissions.view', 'attendance.view'],
-            self::Trainer, self::Staff => ['studio.access', 'organizations.view', 'locations.view', 'attendance.view'],
+            self::Owner => ['trainers.view', 'trainers.manage', ...self::memberPermissions(), ...self::ownerMinimum(), 'locations.view', 'locations.manage', 'attendance.view', 'payments.view', 'payments.record', 'payments.correct', 'reports.view'],
+            self::Administrator => ['trainers.view', 'trainers.manage', ...self::memberPermissions(), 'studio.access', 'organizations.view', 'organizations.manage', 'locations.view', 'locations.manage', 'staff.view', 'staff.manage', 'permissions.view', 'attendance.view'],
+            self::Trainer => ['studio.access', 'organizations.view', 'locations.view', 'attendance.view', 'trainers.view'],
+            self::Staff => ['studio.access', 'organizations.view', 'locations.view', 'attendance.view'],
         };
     }
 }

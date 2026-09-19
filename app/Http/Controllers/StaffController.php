@@ -20,7 +20,7 @@ class StaffController
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
         $data = $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'per_page' => ['sometimes', 'integer', 'min:1', 'max:100']]);
-        $page = OrganizationMembership::query()->where('organization_id', $context->organization()->id)->with('user')->orderBy('id')->paginate($data['per_page'] ?? 25);
+        $page = OrganizationMembership::query()->where('organization_id', $context->organization()->id)->with(['user', 'trainerProfile:id,public_id,organization_membership_id,status'])->orderBy('id')->paginate($data['per_page'] ?? 25);
 
         return response()->json(['data' => $page->getCollection()->map(fn (OrganizationMembership $membership) => Representations::membership($membership, $context, $actor)),
             'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]]);
@@ -30,7 +30,7 @@ class StaffController
     {
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
-        $record = OrganizationMembership::query()->where('organization_id', $context->organization()->id)->where('public_id', $membership)->with('user')->firstOrFail();
+        $record = OrganizationMembership::query()->where('organization_id', $context->organization()->id)->where('public_id', $membership)->with(['user', 'trainerProfile:id,public_id,organization_membership_id,status'])->firstOrFail();
 
         return response()->json(['data' => Representations::membership($record, $context, $actor)]);
     }
@@ -40,6 +40,7 @@ class StaffController
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
         $record = MembershipLifecycle::update($context, $actor, $membership, $request->validated());
+        $record->load('trainerProfile:id,public_id,organization_membership_id,status');
 
         return response()->json(['data' => Representations::membership($record, $context, $actor)]);
     }

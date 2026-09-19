@@ -13,6 +13,8 @@ enum Permission: string
     case StaffManage = 'staff.manage';
     case PermissionsView = 'permissions.view';
     case PermissionsManage = 'permissions.manage';
+    case TrainersView = 'trainers.view';
+    case TrainersManage = 'trainers.manage';
     case MembersView = 'members.view';
     case MembersCreate = 'members.create';
     case MembersUpdate = 'members.update';

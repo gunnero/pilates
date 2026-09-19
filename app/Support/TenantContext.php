@@ -50,9 +50,9 @@ final class TenantContext
     /** @return Builder<Location> */
     public function locations(): Builder
     {
-        $query = Location::query()->where('organization_id', $this->organization()->id);
+        $query = Location::query()->where('locations.organization_id', $this->organization()->id);
         if ($this->membership()->location_scope === LocationScope::Selected) {
-            $query->whereIn('id', DB::table('membership_locations')->select('location_id')->where('organization_id', $this->organization()->id)->where('organization_membership_id', $this->membership()->id));
+            $query->whereIn('locations.id', DB::table('membership_locations')->select('location_id')->where('organization_id', $this->organization()->id)->where('organization_membership_id', $this->membership()->id));
         }
 
         return $query;

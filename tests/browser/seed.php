@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\StaffRole;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
 
 require __DIR__.'/../../vendor/autoload.php';
 $app = require __DIR__.'/../../bootstrap/app.php';
@@ -26,6 +27,11 @@ foreach (['Test Studio', 'Other Studio'] as $name) {
     $organization = Organization::create(['name' => $name]);
     $membership = new OrganizationMembership;
     $membership->forceFill(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    foreach (['desktop', 'mobile'] as $viewport) {
+        $teachingUser = User::firstOrCreate(['email' => $viewport.'@example.test'], ['name' => 'Teacher '.$viewport, 'password' => Str::random(40)]);
+        $teachingAccess = new OrganizationMembership;
+        $teachingAccess->forceFill(['organization_id' => $organization->id, 'user_id' => $teachingUser->id, 'role' => StaffRole::Administrator, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Administrator->permissions()])->save();
+    }
     $access = new OrganizationMembership;
     $access->forceFill(['organization_id' => $organization->id, 'user_id' => $trainer->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Trainer->permissions()])->save();
 }

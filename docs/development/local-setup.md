@@ -67,3 +67,13 @@ php artisan gt:member-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --re
 ```
 
 The membership UUID is available in the authorized staff directory API. This command creates no credentials, sends no mail and writes bounded system-actor audit evidence. Newly provisioned Owner/Administrator bundles include the six client permissions. Clients can be entered through Клиенти without any User, phone or email. Do not populate real PII in test fixtures, screenshots or development demonstrations.
+
+## GT-004 adoption
+
+Inspect `php artisan migrate --pretend`, take the established private native pg_dump backup, then `php artisan migrate` for the additive trainer schema. Preserve existing organizations, memberships/grants, clients and audit rows; do not reset/reseed gt_dev. The migration does not create trainer profiles or change grants. Deliberately enable trainer management for an existing active all-location Owner/Administrator with:
+
+```bash
+php artisan gt:trainer-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason='GT-004 adoption'
+```
+
+Then use Staff → Enable as trainer for an existing active membership. This creates operational teaching capability only. See [trainer domain](../domain/trainer-profiles.md) for permissions, visibility and future member-facing restrictions.

@@ -59,3 +59,7 @@ See [audit evidence](../security/audit.md), [API contract](api.md), [security re
 ## GT-003 permission extension
 
 The current explicit Owner/Administrator bundles add six client capabilities. Existing GT-002 stored grants are preserved; an audited operator adoption command enables a legacy manager deliberately. Trainer/Staff defaults remain unchanged. The catalog now contains 20 permissions; the delegation, token, owner-custody and minimum-control rules above remain intact. See [client permissions](../domain/studio-members.md).
+
+## GT-004 operational extension
+
+TrainerProfile is now an optional one-to-one teaching profile for any active membership, independent of role. New Owner/Administrator bundles add trainers.view/manage; Trainer adds trainers.view; Staff is unchanged. The current catalog contains 22 capabilities (Owner 22, Administrator 17, Trainer 5, Staff 4). Existing stored grants stay unchanged until explicit audited adoption. Operational profile changes do not edit staff authority. Staff responses include trainer UUID/status only for all-location trainers.view callers. See [trainer model, lifecycle and location policy](../domain/trainer-profiles.md).
