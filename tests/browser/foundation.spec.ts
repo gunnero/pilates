@@ -384,7 +384,7 @@ test('real session authentication, CSRF, localization and responsive shell', asy
         await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('link', { name: 'Schedule', exact: true }).click();
     await expect(
-        page.getByRole('heading', { name: 'Weekly schedule', exact: true }),
+        page.getByRole('heading', { name: 'Session agenda', exact: true }),
     ).toBeVisible();
     expect(
         await page.evaluate(

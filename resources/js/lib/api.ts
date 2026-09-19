@@ -168,3 +168,24 @@ export type TrainingGroup = {
     schedule_summary?: ScheduleRule[];
     schedule_rule_count?: number;
 };
+
+export type TrainingSession = {
+    id: string;
+    group: { id: string; name: string };
+    location: { id: string; name: string };
+    trainer: { id: string; display_name: string };
+    local_date: string;
+    start_time: string;
+    end_time: string;
+    starts_at: string;
+    ends_at: string;
+    timezone: string;
+    capacity: number;
+    status: 'scheduled' | 'cancelled';
+    source_type: 'recurring' | 'manual';
+    is_overridden: boolean;
+    cancellation_reason: string | null;
+    cancellation_kind: 'manual' | 'schedule' | null;
+    operational_issues: string[];
+    editable: boolean;
+};

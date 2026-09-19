@@ -87,3 +87,7 @@ php artisan gt:group-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --rea
 ```
 
 This trusted adoption adds group/schedule view/manage only to an active all-location Owner/Administrator and audits; it creates no group or rule. Other selected-location management grants use existing bounded delegation. Use Групи to create a group at an active location, optionally assign an eligible trainer, and add weekly local-time definitions. Rules are retained through close/replace/cancel. Existing local schedule history prevents ordinary organization timezone changes. No session generation or client assignment is provided.
+
+## GT-006 sessions
+
+Existing grants are unchanged. Explicitly adopt an active all-location owner/admin with `php artisan gt:session-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason='GT-006 adoption'`. No sessions are seeded. Run `php artisan gt:sessions:materialize` (optionally `--organization=UUID`) to prepare the next 56 inclusive local dates; reruns preserve existing and cancelled occurrences. Output contains identifiers/counts/reason codes only; exit 1 signals any skipped invalid/DST/conflict/limit work or failed group. Each group is atomic; other groups continue. No host cron, queue or shared Redis configuration is installed. A future scheduler can invoke this idempotent command regularly. See [session behavior and limits](../domain/training-sessions.md).

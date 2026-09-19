@@ -29,9 +29,9 @@ enum StaffRole: string
     public function permissions(): array
     {
         return match ($this) {
-            self::Owner => ['groups.view', 'groups.manage', 'schedule.view', 'schedule.manage', 'trainers.view', 'trainers.manage', ...self::memberPermissions(), ...self::ownerMinimum(), 'locations.view', 'locations.manage', 'attendance.view', 'payments.view', 'payments.record', 'payments.correct', 'reports.view'],
-            self::Administrator => ['groups.view', 'groups.manage', 'schedule.view', 'schedule.manage', 'trainers.view', 'trainers.manage', ...self::memberPermissions(), 'studio.access', 'organizations.view', 'organizations.manage', 'locations.view', 'locations.manage', 'staff.view', 'staff.manage', 'permissions.view', 'attendance.view'],
-            self::Trainer => ['studio.access', 'organizations.view', 'locations.view', 'attendance.view', 'trainers.view', 'groups.view', 'schedule.view'],
+            self::Owner => ['sessions.view', 'sessions.manage', 'sessions.cancel', 'groups.view', 'groups.manage', 'schedule.view', 'schedule.manage', 'trainers.view', 'trainers.manage', ...self::memberPermissions(), ...self::ownerMinimum(), 'locations.view', 'locations.manage', 'attendance.view', 'payments.view', 'payments.record', 'payments.correct', 'reports.view'],
+            self::Administrator => ['sessions.view', 'sessions.manage', 'sessions.cancel', 'groups.view', 'groups.manage', 'schedule.view', 'schedule.manage', 'trainers.view', 'trainers.manage', ...self::memberPermissions(), 'studio.access', 'organizations.view', 'organizations.manage', 'locations.view', 'locations.manage', 'staff.view', 'staff.manage', 'permissions.view', 'attendance.view'],
+            self::Trainer => ['sessions.view', 'studio.access', 'organizations.view', 'locations.view', 'attendance.view', 'trainers.view', 'groups.view', 'schedule.view'],
             self::Staff => ['studio.access', 'organizations.view', 'locations.view', 'attendance.view'],
         };
     }

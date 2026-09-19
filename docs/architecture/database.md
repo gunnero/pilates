@@ -30,3 +30,7 @@ The additive migration creates training_groups and schedule_rules, leaving all p
 Same-group overlap is a native GiST exclusion over singleton int8range(group ID), weekly int4range(minutes) and inclusive daterange. Canceled rules are excluded. No new PostgreSQL extension or privileged role is needed. Cross-group trainer conflicts use the existing organization-lock protocol, with checks on every supported rule/assignment/activation writer; raw trusted SQL is not a supported bypass-safe provisioning path for that aggregate invariant.
 
 Rollback drops new group/rule tables but retains historical audit events and explicit grants using NOT VALID legacy catalogs, as earlier migrations do. A rollback is destructive for the new domain and requires a backup; normal development applies the additive migration only. Historical migrations remain frozen. See [group semantics](../domain/training-groups.md).
+
+## GT-006 dated sessions
+
+training_sessions adds tenant-qualified group/location/trainer/rule FKs, unique recurring rule/date identity, local/UTC/timezone and name/assignment/capacity snapshots. Native GiST trainer and group exclusions apply to scheduled half-open intervals. Check constraints validate source, status, cancellation evidence, capacity, elapsed and local same-day timing. Organization/start and location/trainer/group start indexes plus local-date order support bounded agenda reads. No extension is required; no prior rows or grants are changed. See [session integrity](../domain/training-sessions.md#conflicts-integrity-and-capacity-contract).

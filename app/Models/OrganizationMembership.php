@@ -8,6 +8,7 @@ use App\Support\MembershipStatus;
 use App\Support\StaffRole;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** Staff access only; never a studio customer membership.
@@ -41,6 +42,12 @@ class OrganizationMembership extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /** @return BelongsToMany<Location, $this> */
+    public function locations(): BelongsToMany
+    {
+        return $this->belongsToMany(Location::class, 'membership_locations');
     }
 
     /** @return HasOne<TrainerProfile, $this> */

@@ -41,6 +41,7 @@ final class ScheduleLifecycle
                 throw ValidationException::withMessages(['effective_from' => __('groups.future')]);
             }
             $old = null;
+            $reconcile = false;
             if ($replaceId !== null) {
                 $old = $group->scheduleRules()->where('public_id', $replaceId)->firstOrFail();
                 abort_if($group->scheduleRules()->where('replaces_rule_id', $old->id)->exists(), 409, __('groups.already_replaced'));
@@ -49,6 +50,7 @@ final class ScheduleLifecycle
                 }
                 $oldEnd = $old->effective_until;
                 $old->effective_until = CarbonImmutable::parse($data['effective_from'])->subDay()->toDateString();
+                $reconcile = SessionReconciliation::close($context, $actor, $old, $old->effective_until);
                 $old->save();
                 Audit::record($context->organization(), $actor, 'schedule.rule_closed', 'schedule_rule', $old->public_id, ['group_id' => $group->public_id, 'before' => $oldEnd, 'after' => $old->effective_until]);
             }
@@ -60,6 +62,13 @@ final class ScheduleLifecycle
             $rule->save();
             Audit::record($context->organization(), $actor, $old === null ? 'schedule.rule_created' : 'schedule.rule_replaced', 'schedule_rule', $rule->public_id,
                 ['group_id' => $group->public_id, 'replaces_id' => $old?->public_id, 'weekday' => $rule->weekday, 'start_time' => $data['start_time'], 'end_time' => $data['end_time'], 'effective_from' => $rule->effective_from, 'effective_until' => $rule->effective_until]);
+
+            if ($reconcile) {
+                $result = SessionMaterializer::run($context->organization()->id, $group->public_id, $context, $actor);
+                if ($result['invalid'] > 0 || $result['dst'] > 0 || $result['conflict'] > 0 || $result['limit'] > 0) {
+                    throw new SessionConflict('reconciliation_failed');
+                }
+            }
 
             return $rule;
         });
@@ -87,6 +96,7 @@ final class ScheduleLifecycle
                 }
                 $rule->effective_until = $until;
             }
+            SessionReconciliation::close($context, $actor, $rule, $until);
             $rule->save();
             Audit::record($context->organization(), $actor, $until === null ? 'schedule.rule_canceled' : 'schedule.rule_closed', 'schedule_rule', $rule->public_id,
                 ['group_id' => $group->public_id, 'before' => $before, 'after' => $until]);

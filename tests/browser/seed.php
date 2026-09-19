@@ -1,9 +1,15 @@
 <?php
 
+use App\Models\Location;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\ScheduleRule;
+use App\Models\TrainerProfile;
+use App\Models\TrainingGroup;
 use App\Models\User;
+use App\Support\SessionMaterializer;
 use App\Support\StaffRole;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
@@ -41,3 +47,23 @@ foreach (['Test Studio', 'Other Studio'] as $name) {
     $access->forceFill(['organization_id' => $organization->id, 'user_id' => $trainer->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Trainer->permissions()])->save();
 }
 echo "Isolated browser fixtures prepared.\n";
+
+$sessionFixtures = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Session studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Session owner '.$viewport, 'email' => 'sessions-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $member = new OrganizationMembership;
+    $member->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $location = new Location;
+    $location->forceFill(['organization_id' => $org->id, 'name' => 'Session Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $member->id, 'display_name' => 'Session trainer', 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $location->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Session Pilates', 'capacity' => 12, 'status' => 'active'])->save();
+    $date = CarbonImmutable::now($org->timezone)->addDay()->startOfDay();
+    $rule = new ScheduleRule;
+    $rule->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'weekday' => $date->dayOfWeekIso, 'start_minute' => 600, 'end_minute' => 660, 'effective_from' => $date->toDateString(), 'effective_until' => $date->toDateString()])->save();
+    SessionMaterializer::run($org->id, $group->public_id);
+    $sessionFixtures[$viewport] = ['date' => $date->toDateString()];
+}
+file_put_contents(base_path('.local/browser-session-fixture.json'), json_encode($sessionFixtures, JSON_THROW_ON_ERROR));

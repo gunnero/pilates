@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\SessionConflict;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,8 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request): bool => $request->is('api/*', 'auth/*') || $request->expectsJson());
         // Framework exception messages can contain submitted values or SQL. Public errors are bounded.
-        $exceptions->respond(function (Response $response): Response {
+        $exceptions->respond(function (Response $response, Throwable $exception): Response {
             if (request()->is('api/*', 'auth/*') && $response->getStatusCode() >= 400 && $response->getStatusCode() !== 422) {
+                if ($exception instanceof SessionConflict) {
+                    return response()->json(['message' => __('sessions.'.$exception->reason), 'code' => $exception->reason], 409);
+                }
                 $status = $response->getStatusCode();
                 $headers = array_filter(['Retry-After' => $response->headers->get('Retry-After')]);
 

@@ -735,3 +735,17 @@ h2 {
         grid-template-columns: 2fr 1fr 1fr 1fr auto;
     }
 }
+
+.session-agenda .session-filters {
+    margin-top: 1.5rem;
+}
+.session-agenda .session-cancelled {
+    border-left: 3px solid var(--muted);
+    padding-left: 1rem;
+}
+.session-agenda .record-row {
+    gap: 1rem;
+}
+.session-agenda .record-row p {
+    overflow-wrap: anywhere;
+}

@@ -30,3 +30,7 @@ Subject trainer_profile uses the retained public profile UUID. trainer.enabled r
 ## GT-005 group and schedule evidence
 
 Subjects training_group and schedule_rule use their retained public UUIDs. Group creation/profile edits record changed field names, with separate bounded scalar/public-reference events for capacity, location, trainer and status. Descriptions and group names are not copied into audit payloads. Rule create/replace evidence records public group/predecessor references, weekday, local HH:mm and inclusive dates; close/cancel evidence records period/cancellation action. No generic mutable-time edit exists. Failed overlap/replacement/audit insertion rolls back the entire transaction, including predecessor closure. Source trainer/staff/location lifecycle events remain evidence for dynamically derived group unavailability; no duplicated fan-out invalidity flag/event is persisted.
+
+## GT-006 session evidence
+
+Manual creation/override events contain bounded before/after public assignment references and time/capacity, never names or cancellation prose. Cancellation records reason presence. Generation produces one aggregate event per group transaction that actually creates occurrences; retries with no creates add no noise. Rule reconciliation records counts with source rule evidence. Every event shares the organization transaction and fails closed on insert failure.

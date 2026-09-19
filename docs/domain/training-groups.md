@@ -76,3 +76,7 @@ Events: group.created/profile_updated/capacity_changed/location_changed/trainer_
 Групи provides body-based search, status/location/trainer filters, pagination, configured capacity, operational issues and up to five retained current/future rule summaries plus total. Распоред provides the same scoped group overview initially filtered to active groups. Detail exposes full paginated rule history and add/close/cancel/replace actions. Macedonian is default; English fallback. No fake occupancy, member list, attendance or payments are shown. Schedule summaries can include several future periods, with dates displayed to distinguish them.
 
 See [API](../architecture/api.md), [review](../security/gt-005-review.md) and [verification](../development/gt-005-verification.md).
+
+## GT-006 integration
+
+The historical GT-005 decisions above are now implemented by [TrainingSession](training-sessions.md). Group default changes preserve all existing occurrence snapshots. Rule changes reconcile untouched future sessions transactionally, while overridden/manually cancelled exceptions block the entire change. The operational Schedule screen now shows dated sessions; weekly definitions remain on group details. No client-group relationships or reservation occupancy exists.

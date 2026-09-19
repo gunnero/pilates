@@ -67,3 +67,7 @@ TrainerProfile is now an optional one-to-one teaching profile for any active mem
 ## GT-005 groups and weekly definitions
 
 Group/schedule writers join the same organization lock protocol. New permission defaults add groups.view/manage and schedule.view/manage to Owner/Administrator, both view capabilities to Trainer; stored grants require deliberate adoption. Group managers with selected scope are constrained to accessible locations. Trainer/staff/location deactivation or assignment removal remains supported and audited at its source; groups retain references and dynamically expose operational invalidity. Organization timezone changes are rejected once any schedule rule exists, preserving historical local-time semantics. See [groups and schedules](../domain/training-groups.md).
+
+## GT-006 shared lock
+
+Generation, manual sessions, occurrence edits/cancellation and recurring reconciliation all use the organization lock. HTTP mutations re-resolve current membership and required grants after acquisition. Source deactivation remains allowed and audited; existing sessions expose current operational issues and preserve snapshots. Timezone changes are blocked after any rule or session exists. Group changes never cascade silently into prepared occurrences.

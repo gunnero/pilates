@@ -11,3 +11,7 @@ A trainer can independently receive payments.view or payments.record without pay
 TrainerProfile is operational data, never an authorization principal. trainers.view exposes the scoped staff-only trainer directory; trainers.manage additionally requires all-location scope for global profile edits. New Owner/Administrator defaults add both, Trainer adds view, Staff stays unchanged. Existing stored grants require explicit adoption. No client or financial permission is implied. See [trainer authorization and rollout](../domain/trainer-profiles.md).
 
 GT-005 grants group and schedule capabilities independently. Selected-location managers can manage only accessible groups. Operational readiness grants no authority or client access; only schedule.view exposes timing summaries/history. Existing grants are preserved. New Owner/Administrator bundles include all four capabilities, Trainer receives both view capabilities, Staff is unchanged. See [group authorization/adoption](../domain/training-groups.md).
+
+## GT-006 additions
+
+The current catalog contains 29 capabilities. sessions.view/manage/cancel are independent; new Owner/Administrator/Trainer/Staff bundles contain 29/24/8/4 grants. Existing arrays are preserved. Trainer-role session access always intersects own TrainerProfile assignment with current location scope, including on overrides. A session at a former group location is authorized by its saved location. Recurring reconciliation requires authority over every affected session and sessions.view/manage/cancel when materialized rows are affected.

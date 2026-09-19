@@ -115,3 +115,7 @@ Schedule create/replace accepts weekday 1–7 (Monday–Sunday), start_time/end_
 Close accepts only effective_until, today or later, within the current period; it cannot extend a closed end. Cancel requires start strictly after local today. Success responses to close/cancel are `{data:null}`. Schedule representation contains id, weekday, start_time, end_time, effective_from, effective_until, canceled. Pagination meta also includes timezone and today for date controls. Ordered by weekday, start_time, effective_from, then stable ID. Overlap/conflict returns generic 409; invalid dates/time/state returns 422. Failed replacement rolls back the predecessor closure and audit too.
 
 Organization timezone edits return 409 once schedule history exists, preserving local-time meaning. Schedule definitions never become permanent UTC clock values. See [domain/DST/conflict policy](../domain/training-groups.md); no occurrence generation is implemented.
+
+## GT-006 sessions
+
+[Session API](../domain/training-sessions.md#access-api-and-audit) adds bounded 56-date calendars, manual creation, full editable occurrence PATCH, terminal cancellation and a fixed-horizon materialization action. Independent view/manage/cancel permissions, snapshot-location scope and Trainer-role own-assignment scope apply. Safe allowlisted session conflict codes have localized 409 messages; framework/SQL errors remain generic. No member occupancy is serialized.

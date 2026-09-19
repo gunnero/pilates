@@ -55,3 +55,7 @@ See [API](../architecture/api.md), [focused review](../security/gt-004-review.md
 ## GT-005 integration
 
 TrainingGroup now optionally references a primary TrainerProfile. Assignment requires current same-tenant active profile/staff and location eligibility under the organization lock. Later deactivation/suspension/revocation/scope removal keeps the group reference and dynamically reports trainer_unavailable; group responses expose only operational name/UUID. Active groups reserve trainer schedule conflicts even while unavailable, so restoration cannot silently introduce a collision. Group/schedule permissions are independent, and no client-group relationship exists. See [group operational policy](training-groups.md).
+
+## GT-006 concrete assignment
+
+Session assignment snapshots use this same current eligibility boundary under the organization lock. Concrete scheduled sessions reserve trainer time through a PostgreSQL exclusion constraint, even while the trainer is unavailable; cancellation releases it. Trainer-role session visibility additionally requires own assignment and current session-location scope. See [session policy](training-sessions.md).

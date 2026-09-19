@@ -9,6 +9,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudioMemberController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\TrainingGroupController;
+use App\Http\Controllers\TrainingSessionController;
 use App\Http\Middleware\ResolveOrganization;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/staff', [StaffController::class, 'index'])->middleware('can:staff.view');
         Route::get('/staff/{membership}', [StaffController::class, 'show'])->whereUuid('membership')->middleware('can:staff.view');
         Route::patch('/staff/{membership}', [StaffController::class, 'update'])->whereUuid('membership')->middleware('can:staff.manage');
+        Route::prefix('sessions')->middleware('can:sessions.view')->group(function (): void {
+            Route::get('/', [TrainingSessionController::class, 'index']);
+            Route::post('/', [TrainingSessionController::class, 'store'])->middleware('can:sessions.manage');
+            Route::get('/{session}', [TrainingSessionController::class, 'show'])->whereUuid('session');
+            Route::patch('/{session}', [TrainingSessionController::class, 'update'])->whereUuid('session')->middleware('can:sessions.manage');
+            Route::post('/{session}/cancel', [TrainingSessionController::class, 'cancel'])->whereUuid('session')->middleware('can:sessions.cancel');
+        });
+        Route::post('/groups/{group}/materialize', [TrainingSessionController::class, 'materialize'])->whereUuid('group')->middleware(['can:sessions.view', 'can:sessions.manage', 'can:groups.view']);
         Route::prefix('groups')->middleware('can:groups.view')->group(function (): void {
             Route::get('/', [TrainingGroupController::class, 'index']);
             Route::post('/search', [TrainingGroupController::class, 'index']);
