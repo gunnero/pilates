@@ -17,10 +17,10 @@ class TrainerMigrationTest extends TestCase
 
     public function test_upgrade_preserves_existing_staff_clients_and_evidence(): void
     {
-        Artisan::call('migrate:rollback', ['--step' => 1, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
         $org = Organization::create(['name' => 'Legacy fixture']);
         $user = User::factory()->create();
-        $grants = array_values(array_diff(StaffRole::Owner->permissions(), ['trainers.view', 'trainers.manage']));
+        $grants = array_values(array_diff(StaffRole::Owner->permissions(), ['trainers.view', 'trainers.manage', 'groups.view', 'groups.manage', 'schedule.view', 'schedule.manage']));
         $access = $this->membership($user, $org, StaffRole::Owner, $grants);
         $this->actingAs($user)->postJson($this->base($org).'/members', ['first_name' => 'Test', 'last_name' => 'Legacy'])->assertCreated();
         $tables = ['organizations', 'organization_memberships', 'studio_members', 'audit_events'];

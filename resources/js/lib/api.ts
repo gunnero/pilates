@@ -144,3 +144,27 @@ export type TrainerProfile = {
     eligible_location_count: number;
     eligible_locations: { id: string; name: string }[];
 };
+
+export type ScheduleRule = {
+    id: string;
+    weekday: number;
+    start_time: string;
+    end_time: string;
+    effective_from: string;
+    effective_until: string | null;
+    canceled: boolean;
+};
+export type TrainingGroup = {
+    id: string;
+    name: string;
+    description?: string | null;
+    capacity: number;
+    status: 'active' | 'inactive' | 'archived';
+    location: { id: string; name: string; status: 'active' | 'inactive' };
+    primary_trainer: { id: string; display_name: string } | null;
+    timezone: string;
+    eligible_for_scheduling: boolean;
+    operational_issues: string[];
+    schedule_summary?: ScheduleRule[];
+    schedule_rule_count?: number;
+};

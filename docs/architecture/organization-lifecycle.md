@@ -63,3 +63,7 @@ The current explicit Owner/Administrator bundles add six client capabilities. Ex
 ## GT-004 operational extension
 
 TrainerProfile is now an optional one-to-one teaching profile for any active membership, independent of role. New Owner/Administrator bundles add trainers.view/manage; Trainer adds trainers.view; Staff is unchanged. The current catalog contains 22 capabilities (Owner 22, Administrator 17, Trainer 5, Staff 4). Existing stored grants stay unchanged until explicit audited adoption. Operational profile changes do not edit staff authority. Staff responses include trainer UUID/status only for all-location trainers.view callers. See [trainer model, lifecycle and location policy](../domain/trainer-profiles.md).
+
+## GT-005 groups and weekly definitions
+
+Group/schedule writers join the same organization lock protocol. New permission defaults add groups.view/manage and schedule.view/manage to Owner/Administrator, both view capabilities to Trainer; stored grants require deliberate adoption. Group managers with selected scope are constrained to accessible locations. Trainer/staff/location deactivation or assignment removal remains supported and audited at its source; groups retain references and dynamically expose operational invalidity. Organization timezone changes are rejected once any schedule rule exists, preserving historical local-time semantics. See [groups and schedules](../domain/training-groups.md).

@@ -51,3 +51,7 @@ The current representation is staff-only: public profile/membership IDs, effecti
 A future member-facing schedule may expose a deliberately selected display name and approved short bio. It must use a separate representation and policy; never reuse this staff response containing role, staff status or membership UUID. There is no public profile endpoint or promise that current text is publication-approved. Photos and consent/publication controls remain deferred.
 
 See [API](../architecture/api.md), [focused review](../security/gt-004-review.md) and [verification](../development/gt-004-verification.md).
+
+## GT-005 integration
+
+TrainingGroup now optionally references a primary TrainerProfile. Assignment requires current same-tenant active profile/staff and location eligibility under the organization lock. Later deactivation/suspension/revocation/scope removal keeps the group reference and dynamically reports trainer_unavailable; group responses expose only operational name/UUID. Active groups reserve trainer schedule conflicts even while unavailable, so restoration cannot silently introduce a collision. Group/schedule permissions are independent, and no client-group relationship exists. See [group operational policy](training-groups.md).

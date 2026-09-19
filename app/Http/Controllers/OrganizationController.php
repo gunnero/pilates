@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrganizationRequest;
+use App\Models\ScheduleRule;
 use App\Models\User;
 use App\Support\Audit;
 use App\Support\Lifecycle;
@@ -28,6 +29,9 @@ class OrganizationController
             $before = Representations::organization($organization);
             $organization->forceFill($request->validated());
             $changes = $organization->getDirty();
+            if (array_key_exists('timezone', $changes)) {
+                abort_if(ScheduleRule::query()->where('organization_id', $organization->id)->exists(), 409, __('groups.timezone_locked'));
+            }
             if ($changes !== []) {
                 $organization->save();
                 $after = Representations::organization($organization);

@@ -22,3 +22,11 @@ All supported lifecycle writers serialize on the organization row; the last-owne
 ## GT-003 clients
 
 `studio_members` is tenant-owned customer identity, separate from staff access. Its nullable user_id is reserved for future verified linkage, with unique organization/user pairing for nonnull links. Optional preferred_location_id uses a composite organization/location FK. Controlled statuses/modes/locales, canonical contact syntax, bounded fields and public UUID uniqueness are enforced in PostgreSQL. Contact indexes are nonunique, permitting shared family details; tenant-leading pattern indexes support literal prefix search. The migration widens the finite grant/audit-subject catalogs without changing grants or existing evidence. See [client lifecycle and rollback limits](../domain/studio-members.md).
+
+## GT-005 group/schedule integrity
+
+The additive migration creates training_groups and schedule_rules, leaving all prior records/grants untouched. Groups have composite organization/location and organization/primary-trainer foreign keys, UUID uniqueness, nonblank bounded names, capacity 1–100 and controlled status. Rules have tenant-qualified group and predecessor FKs, at most one successor, weekday/time/duration/date CHECKs and retained cancellation state.
+
+Same-group overlap is a native GiST exclusion over singleton int8range(group ID), weekly int4range(minutes) and inclusive daterange. Canceled rules are excluded. No new PostgreSQL extension or privileged role is needed. Cross-group trainer conflicts use the existing organization-lock protocol, with checks on every supported rule/assignment/activation writer; raw trusted SQL is not a supported bypass-safe provisioning path for that aggregate invariant.
+
+Rollback drops new group/rule tables but retains historical audit events and explicit grants using NOT VALID legacy catalogs, as earlier migrations do. A rollback is destructive for the new domain and requires a backup; normal development applies the additive migration only. Historical migrations remain frozen. See [group semantics](../domain/training-groups.md).

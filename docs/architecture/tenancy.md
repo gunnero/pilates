@@ -21,3 +21,5 @@ Organization means the studio-owning business; Location is a physical branch. Us
 - Add positive and guessed-UUID, nonactive membership/organization, permissions, selected-scope, stale-context and competing-transaction tests.
 
 Future global administration needs a separate audited capability, never a blanket Gate bypass. See [lifecycle decisions](organization-lifecycle.md) for request snapshot limits, location status handling, migration adoption and last-owner guarantees.
+
+GT-005 TrainingGroup/ScheduleRule reads and writes scope groups through current actor-accessible location IDs, including assigned inactive locations for retained history/repair. Trainer assignment checks active same-tenant profile/staff and current location eligibility again under lock. Group relationship summaries expose operational trainer name/UUID even when its retained assignment becomes unavailable; they expose no private staff data. Schedule conflicts may span actor-inaccessible locations in the same tenant but return only a generic conflict, never another group's identity. Groups establish no StudioMember visibility relationship.

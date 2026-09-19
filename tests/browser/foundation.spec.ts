@@ -4,11 +4,12 @@ test('real session authentication, CSRF, localization and responsive shell', asy
     context,
     request,
 }, testInfo) => {
+    const email = `${testInfo.project.name}@browser.example.test`;
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     const rejected = await request.post('/auth/login', {
         data: {
-            email: 'browser@example.test',
+            email,
             password: 'Browser-fixture-123!',
         },
         headers: { Accept: 'application/json' },
@@ -20,7 +21,7 @@ test('real session authentication, CSRF, localization and responsive shell', asy
         page.getByRole('heading', { name: 'Добредојдовте во GT' }),
     ).toBeVisible();
     await page.getByLabel('Јазик').selectOption('en');
-    await page.getByLabel('Email').fill(' BROWSER@example.test ');
+    await page.getByLabel('Email').fill(` ${email.toUpperCase()} `);
     await page
         .getByLabel('Password', { exact: true })
         .fill('Browser-fixture-123!');
@@ -77,7 +78,6 @@ test('real session authentication, CSRF, localization and responsive shell', asy
     await expect(
         page.getByRole('heading', { name: locationName }),
     ).not.toBeVisible();
-    await expect(page.getByText('No accessible locations yet.')).toBeVisible();
     await page.reload();
     await expect(page.getByLabel('Изберете студио')).toHaveValue(other);
     await page.getByLabel('Јазик').selectOption('en');
@@ -273,6 +273,124 @@ test('real session authentication, CSRF, localization and responsive shell', asy
         path: `test-results/${testInfo.project.name}-client-profile.png`,
         fullPage: true,
     });
+    if (testInfo.project.name === 'mobile')
+        await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('link', { name: /Locations/ }).click();
+    await page
+        .getByRole('button', { name: 'Add location', exact: true })
+        .click();
+    const teachingLocation = `Teaching ${testInfo.project.name}`;
+    await page.getByLabel('Location name').fill(teachingLocation);
+    await page
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: teachingLocation, exact: true }),
+    ).toBeVisible();
+    if (testInfo.project.name === 'mobile')
+        await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('link', { name: 'Groups', exact: true }).click();
+    await page.getByRole('button', { name: 'Add group', exact: true }).click();
+    const groupForm = page.locator('form.management-form');
+    const groupName = `Pilates ${testInfo.project.name}`;
+    await groupForm.getByLabel('Group name', { exact: true }).fill(groupName);
+    await groupForm
+        .getByRole('combobox', { name: 'Location', exact: true })
+        .selectOption({ label: teachingLocation });
+    await groupForm
+        .getByRole('combobox', { name: 'Primary trainer', exact: true })
+        .selectOption({ label: `Jovana ${testInfo.project.name}` });
+    await groupForm.getByLabel('Capacity (1–100)', { exact: true }).fill('12');
+    await groupForm
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: groupName, exact: true }),
+    ).toBeVisible();
+    await expect(
+        page.getByText('Capacity: 12', { exact: false }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Add weekly time', exact: true })
+        .click();
+    await page.getByLabel('Effective from', { exact: true }).fill('2035-01-01');
+    await page
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', {
+            name: 'Monday · 18:00–19:00',
+            exact: true,
+        }),
+    ).toBeVisible();
+    await page
+        .getByRole('button', { name: 'Change from a future date', exact: true })
+        .click();
+    await page.getByLabel('Effective from', { exact: true }).fill('2035-02-01');
+    await page.getByLabel('Start time', { exact: true }).fill('19:00');
+    await page.getByLabel('End time', { exact: true }).fill('20:00');
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
+    await page.screenshot({
+        path: `test-results/${testInfo.project.name}-schedule-form.png`,
+        fullPage: true,
+    });
+    await page
+        .getByRole('button', { name: 'Save changes', exact: true })
+        .click();
+    await expect(
+        page.getByRole('heading', {
+            name: 'Monday · 19:00–20:00',
+            exact: true,
+        }),
+    ).toBeVisible();
+    await expect(
+        page.getByText('2035-01-01 → 2035-01-31', { exact: true }),
+    ).toBeVisible();
+    await page
+        .getByRole('combobox', { name: 'Change group status', exact: true })
+        .selectOption('inactive');
+    await page
+        .getByRole('button', { name: 'Apply status', exact: true })
+        .click();
+    await expect(
+        page.getByText('Group is inactive.', { exact: true }),
+    ).toBeVisible();
+    await page
+        .getByRole('combobox', { name: 'Change group status', exact: true })
+        .selectOption('active');
+    await page
+        .getByRole('button', { name: 'Apply status', exact: true })
+        .click();
+    await expect(
+        page.getByText('Group is inactive.', { exact: true }),
+    ).not.toBeVisible();
+    await page.screenshot({
+        path: `test-results/${testInfo.project.name}-group-profile.png`,
+        fullPage: true,
+    });
+    await page
+        .getByRole('link', { name: 'Back to groups', exact: true })
+        .click();
+    await page.getByRole('searchbox').fill(groupName);
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await expect(
+        page.getByRole('heading', { name: groupName, exact: true }),
+    ).toBeVisible();
+    if (testInfo.project.name === 'mobile')
+        await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('link', { name: 'Schedule', exact: true }).click();
+    await expect(
+        page.getByRole('heading', { name: 'Weekly schedule', exact: true }),
+    ).toBeVisible();
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+    ).toBe(true);
     if (testInfo.project.name === 'mobile')
         await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('link', { name: /Payments/ }).click();

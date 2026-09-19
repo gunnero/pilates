@@ -4,9 +4,11 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrganizationContextController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ScheduleRuleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudioMemberController;
 use App\Http\Controllers\TrainerController;
+use App\Http\Controllers\TrainingGroupController;
 use App\Http\Middleware\ResolveOrganization;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +26,21 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/staff', [StaffController::class, 'index'])->middleware('can:staff.view');
         Route::get('/staff/{membership}', [StaffController::class, 'show'])->whereUuid('membership')->middleware('can:staff.view');
         Route::patch('/staff/{membership}', [StaffController::class, 'update'])->whereUuid('membership')->middleware('can:staff.manage');
+        Route::prefix('groups')->middleware('can:groups.view')->group(function (): void {
+            Route::get('/', [TrainingGroupController::class, 'index']);
+            Route::post('/search', [TrainingGroupController::class, 'index']);
+            Route::post('/', [TrainingGroupController::class, 'store'])->middleware('can:groups.manage');
+            Route::get('/{group}', [TrainingGroupController::class, 'show'])->whereUuid('group');
+            Route::patch('/{group}', [TrainingGroupController::class, 'update'])->whereUuid('group')->middleware('can:groups.manage');
+            Route::patch('/{group}/status', [TrainingGroupController::class, 'status'])->whereUuid('group')->middleware('can:groups.manage');
+            Route::prefix('/{group}/schedule')->whereUuid('group')->middleware('can:schedule.view')->group(function (): void {
+                Route::get('/', [ScheduleRuleController::class, 'index']);
+                Route::post('/', [ScheduleRuleController::class, 'store'])->middleware('can:schedule.manage');
+                Route::post('/{rule}/replace', [ScheduleRuleController::class, 'replace'])->whereUuid('rule')->middleware('can:schedule.manage');
+                Route::patch('/{rule}/close', [ScheduleRuleController::class, 'close'])->whereUuid('rule')->middleware('can:schedule.manage');
+                Route::post('/{rule}/cancel', [ScheduleRuleController::class, 'cancel'])->whereUuid('rule')->middleware('can:schedule.manage');
+            });
+        });
         Route::prefix('trainers')->middleware('can:trainers.view')->group(function (): void {
             Route::get('/', [TrainerController::class, 'index']);
             Route::post('/search', [TrainerController::class, 'index']);

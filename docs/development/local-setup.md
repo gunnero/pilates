@@ -77,3 +77,13 @@ php artisan gt:trainer-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --r
 ```
 
 Then use Staff → Enable as trainer for an existing active membership. This creates operational teaching capability only. See [trainer domain](../domain/trainer-profiles.md) for permissions, visibility and future member-facing restrictions.
+
+## GT-005 adoption
+
+Inspect `php artisan migrate --pretend`, back up the guarded local gt_dev with native pg_dump and then apply `php artisan migrate`. Compare existing users, organizations, locations, staff/assignment/grants, clients, trainers and audit records before/after. Never migrate:fresh or reseed the development database. No btree_gist extension installation is needed.
+
+```bash
+php artisan gt:group-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason='GT-005 adoption'
+```
+
+This trusted adoption adds group/schedule view/manage only to an active all-location Owner/Administrator and audits; it creates no group or rule. Other selected-location management grants use existing bounded delegation. Use Групи to create a group at an active location, optionally assign an eligible trainer, and add weekly local-time definitions. Rules are retained through close/replace/cancel. Existing local schedule history prevents ordinary organization timezone changes. No session generation or client assignment is provided.

@@ -85,3 +85,33 @@ Enable accepts required membership_id (public UUID), optional nullable display_n
 Directory filters: page 1–10000, per_page 1–100 (default 25), status active/inactive/all, location_id UUID and POST-only search 2–100 characters. Search is a bound, escaped case-insensitive prefix on effective display name; GET search is prohibited. Location filters require a currently active location accessible to the viewer and select only eligible active trainers. Locations paging uses the same page/per_page bounds. List order is stable internal ID; no internal ID is serialized.
 
 The explicit staff representation includes id, membership_id, display_name, display_name_override, status, staff_role, staff_status, location_scope, eligible_location_count, up to five eligible_locations ({id,name}) and assignable. Detail adds bio. Eligibility/counts are viewer-scoped and refreshed from authoritative assignments/status; no auth grants, email or audit metadata appear. Existing Staff representations optionally add trainer_profile: null or {id,status}, only with all-location scope and trainers.view. See [trainer policy](../domain/trainer-profiles.md) before using any response in a future member surface.
+
+## GT-005 groups and recurring definitions
+
+Relative base: `/api/v1/organizations/{organization UUID}/groups`. Every endpoint requires active organization/staff, studio.access, groups.view and group-location scope. Selected-location staff receive only their accessible groups. Inactive locations remain inspectable as retained group context.
+
+| Method | Path                                         | Additional authority/result                                        |
+| ------ | -------------------------------------------- | ------------------------------------------------------------------ |
+| GET    | `/`                                          | Paginated groups; default active/inactive, non-PII filters         |
+| POST   | `/search`                                    | JSON body search and filters                                       |
+| POST   | `/`                                          | groups.manage; active group, 201                                   |
+| GET    | `/{group UUID}`                              | Group detail and operational issues                                |
+| PATCH  | `/{group UUID}`                              | groups.manage; profile/capacity/location/primary trainer           |
+| PATCH  | `/{group UUID}/status`                       | groups.manage; explicit lifecycle                                  |
+| GET    | `/{group UUID}/schedule`                     | schedule.view; paginated complete rule history                     |
+| POST   | `/{group UUID}/schedule`                     | schedule.view/manage; add weekly rule, 201                         |
+| POST   | `/{group UUID}/schedule/{rule UUID}/replace` | schedule.view/manage; atomic future replacement, 201               |
+| PATCH  | `/{group UUID}/schedule/{rule UUID}/close`   | schedule.view/manage; shorten inclusive period                     |
+| POST   | `/{group UUID}/schedule/{rule UUID}/cancel`  | schedule.view/manage; empty body, cancel only not-yet-started rule |
+
+Group creation requires name (160), location_id UUID, capacity integer 1–100; description nullable 2000 and primary_trainer_id nullable UUID are optional. PATCH accepts those same fields partially; ownership/IDs/status/timestamps/permissions/unknown fields are rejected. Status accepts active/inactive/archived; archived restores to inactive first. Reassignment/moving and reactivation with retained rules additionally require schedule.manage. New assignment must be currently eligible at an active accessible same-tenant location; unavailable assignment is 422. Null trainer is allowed and explicitly non-operational.
+
+Search accepts page 1–10000, per_page 1–100 (default 25), search literal case-insensitive name prefix 2–100 characters (POST only), status active/inactive/archived/all, location_id UUID and trainer_id UUID. Trainer filter requires trainers.view and scopes through the trainer directory; foreign/unshared selectors return 404. Responses use the established data/meta envelope without URL query reflection. Stable group order is internal ID, never exposed.
+
+Group representation: id, name, capacity, status, location {id,name,status}, primary_trainer null or {id,display_name}, timezone, eligible_for_scheduling, operational_issues. Detail adds description. Only schedule.view callers receive schedule_summary (up to five non-canceled current/future rules) and schedule_rule_count; full history paginates separately. No staff membership identifiers, role, email, grants, internal keys, audit metadata or clients are serialized.
+
+Schedule create/replace accepts weekday 1–7 (Monday–Sunday), start_time/end_time HH:mm, effective_from YYYY-MM-DD, nullable effective_until YYYY-MM-DD. Times are local same-day minutes, positive duration ≤240; dates are inclusive and bounded to 2000–2100. A new period cannot start before local today. Replacement date must be future and inside the predecessor period, after its start; old ends the previous day. Successor end is explicitly supplied or open-ended. Each predecessor has at most one successor (409 for another replacement). No generic rule PATCH or DELETE exists.
+
+Close accepts only effective_until, today or later, within the current period; it cannot extend a closed end. Cancel requires start strictly after local today. Success responses to close/cancel are `{data:null}`. Schedule representation contains id, weekday, start_time, end_time, effective_from, effective_until, canceled. Pagination meta also includes timezone and today for date controls. Ordered by weekday, start_time, effective_from, then stable ID. Overlap/conflict returns generic 409; invalid dates/time/state returns 422. Failed replacement rolls back the predecessor closure and audit too.
+
+Organization timezone edits return 409 once schedule history exists, preserving local-time meaning. Schedule definitions never become permanent UTC clock values. See [domain/DST/conflict policy](../domain/training-groups.md); no occurrence generation is implemented.

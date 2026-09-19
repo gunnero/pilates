@@ -13,6 +13,7 @@ import { Locations } from './Locations';
 import { Staff } from './Staff';
 import { Members } from './Members';
 import { Trainers } from './Trainers';
+import { Groups } from './Groups';
 import { LanguagePicker } from './LanguagePicker';
 const sections = [
     'dashboard',
@@ -133,9 +134,11 @@ export function StudioShell() {
     const section =
         location.pathname === '/'
             ? 'dashboard'
-            : location.pathname.startsWith('/trainers/')
-              ? 'trainers'
-              : location.pathname.slice(1);
+            : location.pathname.startsWith('/groups/')
+              ? 'groups'
+              : location.pathname.startsWith('/trainers/')
+                ? 'trainers'
+                : location.pathname.slice(1);
     const known = sections.some((item) => item === section);
     const ready = organization?.id === selected && !tenantError;
     return (
@@ -171,6 +174,8 @@ export function StudioShell() {
                                     'staff',
                                     'members',
                                     'trainers',
+                                    'groups',
+                                    'schedule',
                                 ].includes(item) && (
                                     <span
                                         className="nav-dot"
@@ -264,6 +269,17 @@ export function StudioShell() {
                         <Locations
                             key={organization.id}
                             organization={organization}
+                        />
+                    ) : section === 'groups' || section === 'schedule' ? (
+                        <Groups
+                            key={`${organization.id}:${location.pathname}`}
+                            organization={organization}
+                            groupId={
+                                section === 'groups'
+                                    ? location.pathname.split('/')[2]
+                                    : undefined
+                            }
+                            scheduleOnly={section === 'schedule'}
                         />
                     ) : section === 'trainers' ? (
                         <Trainers

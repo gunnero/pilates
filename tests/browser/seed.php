@@ -21,12 +21,17 @@ if ($app->configurationIsCached() || ! $app->environment('e2e')
     throw new RuntimeException('Browser fixtures may only reset the isolated loopback gt_test database.');
 }
 Artisan::call('migrate:fresh', ['--force' => true]);
-$user = User::factory()->create(['name' => 'Test Owner', 'email' => 'browser@example.test', 'password' => 'Browser-fixture-123!']);
+$owners = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $owners[] = User::factory()->create(['name' => 'Test Owner '.$viewport, 'email' => $viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+}
 $trainer = User::factory()->create(['name' => 'Jovana', 'email' => 'trainer@example.test']);
 foreach (['Test Studio', 'Other Studio'] as $name) {
     $organization = Organization::create(['name' => $name]);
-    $membership = new OrganizationMembership;
-    $membership->forceFill(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    foreach ($owners as $user) {
+        $membership = new OrganizationMembership;
+        $membership->forceFill(['organization_id' => $organization->id, 'user_id' => $user->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    }
     foreach (['desktop', 'mobile'] as $viewport) {
         $teachingUser = User::firstOrCreate(['email' => $viewport.'@example.test'], ['name' => 'Teacher '.$viewport, 'password' => Str::random(40)]);
         $teachingAccess = new OrganizationMembership;

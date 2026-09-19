@@ -689,3 +689,49 @@ h2 {
         align-items: stretch;
     }
 }
+
+.group-schedule {
+    margin-top: 2rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1rem;
+}
+.group-directory .record-row,
+.group-schedule .record-row {
+    align-items: flex-start;
+}
+.group-directory .record-row > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.group-schedule .form-actions {
+    flex-wrap: wrap;
+}
+.operational-issue {
+    color: #8a4e21;
+}
+@media (max-width: 560px) {
+    .group-directory .section-heading,
+    .group-schedule .record-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .group-directory input,
+    .group-directory select,
+    .group-directory textarea {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
+.group-schedule .record-row {
+    display: block;
+}
+.group-schedule .form-actions {
+    justify-content: flex-start;
+    margin-top: 1rem;
+}
+@media (min-width: 901px) {
+    .group-filters {
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    }
+}
