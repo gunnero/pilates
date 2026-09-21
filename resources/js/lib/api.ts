@@ -181,6 +181,9 @@ export type TrainingSession = {
     ends_at: string;
     timezone: string;
     capacity: number;
+    reserved_count?: number;
+    available_spots?: number;
+    waiting_count?: number;
     status: 'scheduled' | 'cancelled';
     source_type: 'recurring' | 'manual';
     is_overridden: boolean;

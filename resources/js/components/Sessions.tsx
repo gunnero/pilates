@@ -1,3 +1,4 @@
+import { Reservations } from './Reservations';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -398,7 +399,9 @@ export function Sessions({
                         r.data.invalid +
                         r.data.dst +
                         r.data.conflict +
-                        r.data.limit,
+                        r.data.limit +
+                        (r.data.permanent_conflicts ?? 0) +
+                        (r.data.permanent_ineligible ?? 0),
                 }),
             );
             setRevision((n) => n + 1);
@@ -474,6 +477,27 @@ export function Sessions({
                 session ? (
                     <>
                         {summary(session)}
+                        <p>
+                            {t('bookingCounts', {
+                                reserved: session.reserved_count ?? 0,
+                                available:
+                                    session.available_spots ?? session.capacity,
+                                waiting: session.waiting_count ?? 0,
+                            })}
+                        </p>
+                        <Reservations
+                            key={`${session.id}:${session.capacity}:${session.status}`}
+                            organization={organization}
+                            sessionId={session.id}
+                            onChanged={() => {
+                                void api
+                                    .get<{ data: TrainingSession }>(
+                                        `${base}/${session.id}`,
+                                    )
+                                    .then((r) => setSession(r.data))
+                                    .catch((e) => setError(errorMessage(e)));
+                            }}
+                        />
                         {session.cancellation_reason && (
                             <p>
                                 {t('cancellationReason')}:{' '}
@@ -513,6 +537,15 @@ export function Sessions({
                                 onSubmit={(e) => void cancelSession(e)}
                             >
                                 <p>{t('confirmOccurrenceCancellation')}</p>
+                                <p>
+                                    {t('bookingCounts', {
+                                        reserved: session.reserved_count ?? 0,
+                                        available:
+                                            session.available_spots ??
+                                            session.capacity,
+                                        waiting: session.waiting_count ?? 0,
+                                    })}
+                                </p>
                                 <label>
                                     {t('cancellationReason')}
                                     <input name="reason" maxLength={300} />

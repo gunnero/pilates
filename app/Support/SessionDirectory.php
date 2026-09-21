@@ -6,6 +6,7 @@ use App\Models\TrainingSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 final class SessionDirectory
 {
@@ -18,7 +19,7 @@ final class SessionDirectory
             $q->whereHas('trainer', fn (Builder $t) => $t->where('organization_membership_id', $context->membership()->id));
         }
 
-        return $q->with(['group', 'location', 'trainer.membership.locations']);
+        return $q->withCount(['reservations as reserved_count' => fn (Builder $q) => $q->where('status', 'active'), 'waitingEntries as waiting_count' => fn (Builder $q) => $q->where('status', 'waiting')])->with(['group', 'location', 'trainer.membership.locations']);
     }
 
     /** Snapshot assignment readiness, never current group defaults.
@@ -44,6 +45,10 @@ final class SessionDirectory
     /** @return array<string,mixed> */
     public static function represent(TrainingSession $s): array
     {
-        return ['id' => $s->public_id, 'group' => ['id' => $s->group->public_id, 'name' => $s->group_name], 'location' => ['id' => $s->location->public_id, 'name' => $s->location_name], 'trainer' => ['id' => $s->trainer->public_id, 'display_name' => $s->trainer_name], 'local_date' => $s->local_date, 'start_time' => $s->starts_at->setTimezone($s->timezone)->format('H:i'), 'end_time' => $s->ends_at->setTimezone($s->timezone)->format('H:i'), 'starts_at' => $s->starts_at->utc()->toIso8601String(), 'ends_at' => $s->ends_at->utc()->toIso8601String(), 'timezone' => $s->timezone, 'capacity' => $s->capacity, 'status' => $s->status, 'source_type' => $s->source_type, 'is_overridden' => $s->is_overridden, 'cancellation_reason' => $s->cancellation_reason, 'cancellation_kind' => $s->cancellation_kind, 'operational_issues' => self::issues($s), 'editable' => $s->status === 'scheduled' && $s->starts_at->isFuture()];
+        if ($s->reserved_count > $s->capacity) {
+            Log::error('reservation_capacity_violation', ['session_id' => $s->public_id]);
+        }
+
+        return ['id' => $s->public_id, 'group' => ['id' => $s->group->public_id, 'name' => $s->group_name], 'location' => ['id' => $s->location->public_id, 'name' => $s->location_name], 'trainer' => ['id' => $s->trainer->public_id, 'display_name' => $s->trainer_name], 'local_date' => $s->local_date, 'start_time' => $s->starts_at->setTimezone($s->timezone)->format('H:i'), 'end_time' => $s->ends_at->setTimezone($s->timezone)->format('H:i'), 'starts_at' => $s->starts_at->utc()->toIso8601String(), 'ends_at' => $s->ends_at->utc()->toIso8601String(), 'timezone' => $s->timezone, 'capacity' => $s->capacity, 'reserved_count' => $s->reserved_count, 'available_spots' => max(0, $s->capacity - $s->reserved_count), 'waiting_count' => $s->waiting_count, 'status' => $s->status, 'source_type' => $s->source_type, 'is_overridden' => $s->is_overridden, 'cancellation_reason' => $s->cancellation_reason, 'cancellation_kind' => $s->cancellation_kind, 'operational_issues' => self::issues($s), 'editable' => $s->status === 'scheduled' && $s->starts_at->isFuture()];
     }
 }

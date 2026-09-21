@@ -4,8 +4,10 @@ use App\Models\Location;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\ScheduleRule;
+use App\Models\StudioMember;
 use App\Models\TrainerProfile;
 use App\Models\TrainingGroup;
+use App\Models\TrainingSession;
 use App\Models\User;
 use App\Support\SessionMaterializer;
 use App\Support\StaffRole;
@@ -67,3 +69,27 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $sessionFixtures[$viewport] = ['date' => $date->toDateString()];
 }
 file_put_contents(base_path('.local/browser-session-fixture.json'), json_encode($sessionFixtures, JSON_THROW_ON_ERROR));
+
+$bookingFixtures = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Booking studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Booking owner '.$viewport, 'email' => 'bookings-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $member = new OrganizationMembership;
+    $member->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $location = new Location;
+    $location->forceFill(['organization_id' => $org->id, 'name' => 'Booking Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $member->id, 'display_name' => 'Booking trainer', 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $location->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Booking Pilates', 'capacity' => 1, 'status' => 'active'])->save();
+    $date = CarbonImmutable::now($org->timezone)->addDay()->startOfDay();
+    $rule = new ScheduleRule;
+    $rule->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'weekday' => $date->dayOfWeekIso, 'start_minute' => 600, 'end_minute' => 660, 'effective_from' => $date->toDateString(), 'effective_until' => $date->toDateString()])->save();
+    SessionMaterializer::run($org->id, $group->public_id);
+    foreach (['Offline', 'Ana', 'Elena'] as $name) {
+        $client = new StudioMember;
+        $client->forceFill(['organization_id' => $org->id, 'first_name' => $name, 'last_name' => 'Fixture', 'status' => 'active', 'preferred_locale' => 'mk', 'digital_access_mode' => 'offline'])->save();
+    }
+    $bookingFixtures[$viewport] = ['date' => $date->toDateString(), 'session' => TrainingSession::where('training_group_id', $group->id)->firstOrFail()->public_id, 'group' => $group->public_id];
+}
+file_put_contents(base_path('.local/browser-booking-fixture.json'), json_encode($bookingFixtures, JSON_THROW_ON_ERROR));

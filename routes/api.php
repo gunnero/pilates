@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MemberBookingsController;
 use App\Http\Controllers\OrganizationContextController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PermanentSpotController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ScheduleRuleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudioMemberController;
@@ -67,6 +70,21 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
             Route::patch('/{member}', [StudioMemberController::class, 'update'])->whereUuid('member')->middleware('can:members.update');
             Route::patch('/{member}/status', [StudioMemberController::class, 'status'])->whereUuid('member')->middleware('can:members.status.manage');
         });
+        Route::get('/sessions/{session}/reservations', [ReservationController::class, 'index'])->whereUuid('session')->middleware('can:reservations.view');
+        Route::post('/sessions/{session}/reservations', [ReservationController::class, 'store'])->whereUuid('session')->middleware('can:reservations.manage');
+        Route::post('/sessions/{session}/member-lookup', [ReservationController::class, 'lookup'])->whereUuid('session')->middleware('can:reservations.manage');
+        Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->whereUuid('reservation')->middleware('can:reservations.view');
+        Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->whereUuid('reservation')->middleware('can:reservations.cancel');
+        Route::get('/sessions/{session}/waiting-list', [ReservationController::class, 'index'])->whereUuid('session')->middleware('can:waiting_list.view')->name('waiting.index');
+        Route::post('/sessions/{session}/waiting-list', [ReservationController::class, 'store'])->whereUuid('session')->middleware('can:waiting_list.manage')->name('waiting.store');
+        Route::post('/waiting-list/{reservation}/cancel', [ReservationController::class, 'cancel'])->whereUuid('reservation')->middleware('can:waiting_list.manage')->name('waiting.cancel');
+        Route::get('/groups/{group}/permanent-spots', [PermanentSpotController::class, 'index'])->whereUuid('group')->middleware('can:permanent_spots.view');
+        Route::post('/groups/{group}/permanent-spots', [PermanentSpotController::class, 'store'])->whereUuid('group')->middleware(['can:permanent_spots.view', 'can:permanent_spots.manage']);
+        Route::get('/permanent-spots/{spot}', [PermanentSpotController::class, 'show'])->whereUuid('spot')->middleware('can:permanent_spots.view');
+        Route::patch('/permanent-spots/{spot}', [PermanentSpotController::class, 'update'])->whereUuid('spot')->middleware(['can:permanent_spots.view', 'can:permanent_spots.manage']);
+        Route::post('/groups/{session}/member-lookup', [ReservationController::class, 'lookup'])->whereUuid('session')->middleware('can:permanent_spots.manage')->name('spots.lookup');
+        Route::get('/members/{member}/reservations', MemberBookingsController::class)->whereUuid('member')->middleware('can:reservations.view');
+        Route::get('/members/{member}/permanent-spots', MemberBookingsController::class)->whereUuid('member')->middleware('can:permanent_spots.view')->name('member.spots');
         Route::get('/permissions', [StaffController::class, 'permissions'])->middleware('can:permissions.view');
     });
 });

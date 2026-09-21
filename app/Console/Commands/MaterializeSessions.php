@@ -33,7 +33,7 @@ class MaterializeSessions extends Command
                 try {
                     $counts = SessionMaterializer::run($org->id, $g->public_id);
                     $this->line(json_encode(['organization' => $org->public_id, 'group' => $g->public_id, ...$counts], JSON_THROW_ON_ERROR));
-                    if ($counts['invalid'] + $counts['dst'] + $counts['conflict'] + $counts['limit'] > 0) {
+                    if ($counts['invalid'] + $counts['dst'] + $counts['conflict'] + $counts['limit'] + ($counts['permanent_conflicts'] ?? 0) + ($counts['permanent_ineligible'] ?? 0) > 0) {
                         $failed = true;
                     }
                 } catch (Throwable) {

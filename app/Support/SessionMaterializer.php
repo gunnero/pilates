@@ -26,6 +26,11 @@ final class SessionMaterializer
                 Gate::forUser($actor)->authorize(Permission::SessionsView->value);
                 Gate::forUser($actor)->authorize(Permission::SessionsManage->value);
                 $group = GroupDirectory::query($context, $actor)->where('public_id', $groupId)->firstOrFail();
+                $future = TrainingSession::query()->where('training_group_id', $group->id)->where('starts_at', '>', now())->where('local_date', '<=', now($org->timezone)->addDays(self::DAYS - 1)->toDateString())->limit(801)->pluck('id');
+                if ($future->count() > 800) {
+                    throw new ReservationConflict('limit');
+                }
+                abort_unless(SessionDirectory::query($context, $actor)->whereIn('id', $future)->count() === $future->count(), 404);
                 if ($context->membership()->role === StaffRole::Trainer) {
                     abort_unless($group->primaryTrainer?->organization_membership_id === $context->membership()->id, 404);
                 }
@@ -101,6 +106,11 @@ final class SessionMaterializer
         }
         if ($result['created'] > 0) {
             Audit::record($org, $actor, 'sessions.materialized', 'training_group', $group->public_id, ['from' => $today->toDateString(), 'until' => $last, ...$result]);
+        }
+
+        $sync = PermanentAllocation::group($group);
+        foreach ($sync as $key => $value) {
+            $result['permanent_'.$key] = $value;
         }
 
         return $result;

@@ -4,6 +4,13 @@ namespace App\Support;
 
 enum Permission: string
 {
+    case ReservationsView = 'reservations.view';
+    case ReservationsManage = 'reservations.manage';
+    case ReservationsCancel = 'reservations.cancel';
+    case WaitingListView = 'waiting_list.view';
+    case WaitingListManage = 'waiting_list.manage';
+    case PermanentSpotsView = 'permanent_spots.view';
+    case PermanentSpotsManage = 'permanent_spots.manage';
     case StudioAccess = 'studio.access';
     case OrganizationsView = 'organizations.view';
     case OrganizationsManage = 'organizations.manage';

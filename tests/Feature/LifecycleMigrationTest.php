@@ -15,7 +15,7 @@ class LifecycleMigrationTest extends TestCase
 
     public function test_upgrade_preserves_legacy_ids_and_permissions_without_granting_ownership(): void
     {
-        Artisan::call('migrate:rollback', ['--step' => 5, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 6, '--force' => true]);
         $user = User::factory()->create();
         $publicId = (string) Str::uuid7();
         $id = DB::table('organizations')->insertGetId(['public_id' => $publicId, 'name' => 'Legacy Studio', 'locale' => 'mk', 'timezone' => 'Europe/Skopje', 'currency' => 'MKD', 'created_at' => now(), 'updated_at' => now()]);

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\ReservationConflict;
 use App\Support\SessionConflict;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Framework exception messages can contain submitted values or SQL. Public errors are bounded.
         $exceptions->respond(function (Response $response, Throwable $exception): Response {
             if (request()->is('api/*', 'auth/*') && $response->getStatusCode() >= 400 && $response->getStatusCode() !== 422) {
+                if ($exception instanceof ReservationConflict) {
+                    return response()->json(['message' => __('reservations.'.$exception->reason), 'code' => $exception->reason], 409);
+                }
                 if ($exception instanceof SessionConflict) {
                     return response()->json(['message' => __('sessions.'.$exception->reason), 'code' => $exception->reason], 409);
                 }

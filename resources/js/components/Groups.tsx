@@ -1,3 +1,4 @@
+import { PermanentSpots } from './PermanentSpots';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -326,6 +327,10 @@ export function Groups({
                     <>
                         <h3>{group.name}</h3>
                         {summary(group)}
+                        <PermanentSpots
+                            organization={organization}
+                            groupId={group.id}
+                        />
                         <p className="trainer-bio">{group.description}</p>
                         {manage && group.status !== 'archived' && !editing && (
                             <button onClick={() => setEditing(true)}>

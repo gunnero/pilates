@@ -48,6 +48,9 @@ final class GroupLifecycle
                 $values += ['organization_id' => $context->organization()->id, 'status' => 'active'];
             }
             $group->forceFill($values);
+            if ($group->exists && $group->isDirty('capacity')) {
+                PermanentAllocation::assertCapacity($group);
+            }
             $changed = $group->getDirty();
             $assignmentChanged = ! $group->exists || $group->isDirty(['location_id', 'primary_trainer_id']);
             if ($assignmentChanged) {

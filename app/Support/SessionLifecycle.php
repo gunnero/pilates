@@ -42,6 +42,7 @@ final class SessionLifecycle
             Gate::forUser($actor)->authorize(Permission::SessionsView->value);
             $s = $id === null ? new TrainingSession : SessionDirectory::query($context, $actor)->where('public_id', $id)->firstOrFail();
             if ($s->exists) {
+                $s = Allocation::lock($s);
                 if ($s->status !== 'scheduled' || ! $s->starts_at->isFuture()) {
                     throw new SessionConflict('readonly');
                 }
@@ -83,7 +84,13 @@ final class SessionLifecycle
             if (self::conflict($s)) {
                 throw new SessionConflict('conflict');
             }
+            if (! $creating && Allocation::count($s) > $s->capacity) {
+                throw new ReservationConflict('capacity_conflict');
+            }
             $s->save();
+            if (! $creating) {
+                Allocation::promote($s, $actor);
+            }
             Audit::record($context->organization(), $actor, $creating ? 'session.manual_created' : 'session.overridden', 'training_session', $s->public_id, ['before' => $before, 'after' => self::evidence($s)]);
 
             return $s;

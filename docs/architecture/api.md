@@ -45,7 +45,7 @@ Validation is 422 `{message, errors: {field: [messages]}}`. 401 requires authent
 
 Send `Accept: application/json` and `Accept-Language: mk` or `en`. Responses include Content-Language and Vary. Macedonian is the default; React sends selected locale. Resource IDs are UUIDv7; instants use ISO 8601 UTC. Future money uses integer decimal strings and currency, never floats; no financial resource exists now.
 
-Sensitive future money/reservation writes require persisted idempotency keys scoped to organization/actor/operation, request hash checks and replay semantics. GT-002 does not add an idempotency API; repeated location POST can create separate locations, and successful switch requests each produce evidence.
+Sensitive future money writes require persisted idempotency keys scoped to organization/actor/operation, request hash checks and replay semantics. GT-007 reservation retries use locked active-record uniqueness; an explicit rebooking after cancellation creates a new historical record. GT-002 does not add an idempotency API; repeated location POST can create separate locations, and successful switch requests each produce evidence.
 
 ## GT-003 client endpoints
 
@@ -118,4 +118,8 @@ Organization timezone edits return 409 once schedule history exists, preserving 
 
 ## GT-006 sessions
 
-[Session API](../domain/training-sessions.md#access-api-and-audit) adds bounded 56-date calendars, manual creation, full editable occurrence PATCH, terminal cancellation and a fixed-horizon materialization action. Independent view/manage/cancel permissions, snapshot-location scope and Trainer-role own-assignment scope apply. Safe allowlisted session conflict codes have localized 409 messages; framework/SQL errors remain generic. No member occupancy is serialized.
+[Session API](../domain/training-sessions.md#access-api-and-audit) adds bounded 56-date calendars, manual creation, full editable occurrence PATCH, terminal cancellation and a fixed-horizon materialization action. Independent view/manage/cancel permissions, snapshot-location scope and Trainer-role own-assignment scope apply. Safe allowlisted session conflict codes have localized 409 messages; framework/SQL errors remain generic. GT-007 extends these representations with authoritative reserved_count, available_spots and waiting_count.
+
+## GT-007 reservation extension
+
+[Reservation domain and API](../domain/reservations.md) defines implemented staff/offline bookings, permanent-place assignment, synchronous FIFO waiting promotion, capacity guards, member lookup and relationship views. Existing grants remain unchanged; adoption is explicit. Earlier future-booking statements in this document describe the historical baseline; GT-007 uses active-record uniqueness and organization/session locks for retry safety, without a global idempotency-key service. Attendance, payment and mobile self-service remain deferred.

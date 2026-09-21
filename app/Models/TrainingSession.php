@@ -6,8 +6,11 @@ use App\Models\Concerns\HasPublicId;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** @property-read TrainingGroup $group
+/** @property int $reserved_count
+ * @property int $waiting_count
+ * @property-read TrainingGroup $group
  * @property-read Location $location
  * @property-read TrainerProfile $trainer
  * @property CarbonImmutable $starts_at
@@ -24,6 +27,18 @@ class TrainingSession extends Model
     protected function casts(): array
     {
         return ['capacity' => 'integer', 'is_overridden' => 'boolean', 'starts_at' => 'immutable_datetime', 'ends_at' => 'immutable_datetime', 'cancelled_at' => 'immutable_datetime'];
+    }
+
+    /** @return HasMany<Reservation, $this> */
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    /** @return HasMany<WaitingListEntry, $this> */
+    public function waitingEntries(): HasMany
+    {
+        return $this->hasMany(WaitingListEntry::class);
     }
 
     /** @return BelongsTo<TrainingGroup, $this> */

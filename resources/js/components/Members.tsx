@@ -1,3 +1,4 @@
+import { MemberBookings } from './MemberBookings';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -442,6 +443,10 @@ export function Members({ organization }: { organization: Organization }) {
                                 </button>
                             )}
                     </div>
+                    <MemberBookings
+                        organization={organization}
+                        memberId={profile.id}
+                    />
                     <dl className="member-details">
                         <div>
                             <dt>{t('memberPhone')}</dt>

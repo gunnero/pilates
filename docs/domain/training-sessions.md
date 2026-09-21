@@ -86,3 +86,7 @@ Manual creation/override audit contains public assignment references, capacity, 
 ## Limits
 
 Native schema owners can bypass DDL invariants; raw SQL can bypass freshness/history policies enforced by supported writers. Generation is synchronous and bounded per group, with an organization lock favoring correctness over large-tenant throughput. Duplicate manual form submissions have no idempotency key; conflicting clock intervals are nevertheless rejected. No cancellation reversal, completed status, overnight scheduling, room model, travel buffers, timezone migration, exception migration or automatic host scheduling is provided. Already-running reads may complete on their resolved request context; every supported mutation refreshes authority under the lock.
+
+## GT-007 consumers
+
+The reservation contract above is now implemented by [GT-007](reservations.md): session capacity updates lock and check active allocations, increases promote FIFO, materialization synchronizes permanent places, and parent cancellation preserves child history without usable entitlement. Snapshot/source identity and trainer conflict invariants remain unchanged. Earlier GT-006-only no-occupancy statements describe that milestone.

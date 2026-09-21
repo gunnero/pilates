@@ -2,7 +2,7 @@
 
 Read README.md and docs/architecture/overview.md before extending this foundation.
 
-- Work only in the requested task; GT-006 adds durable TrainingSession occurrences; no client-group assignments, reservations or GT-007; no package, booking, attendance or payment module. StudioMember never means staff access.
+- Work only in the requested task; GT-007 adds reservations, permanent places and FIFO waiting lists; no GT-008 attendance, check-in, packages, payments or mobile self-service. StudioMember never means staff access.
 - PostgreSQL is authoritative. Redis is cache/rate limiting only. Never flush the shared Redis service.
 - Every tenant request must authenticate, resolve membership through TenantContext, then authorize a permission before serializing data. No implicit Super Admin bypass.
 - Lifecycle mutations must take the organization row lock, re-resolve current authority, and persist audit evidence in the same transaction. Read docs/architecture/organization-lifecycle.md before extending these writers.
@@ -17,3 +17,5 @@ Read README.md and docs/architecture/overview.md before extending this foundatio
 - Keep Laravel/React localization keys in lang/ and resources/js/locales/.
 - Before committing: composer check; pnpm typecheck; pnpm lint; pnpm format:check; pnpm test; pnpm build; pnpm test:e2e; composer audit --locked; pnpm audit; scripts/secrets-check.
 - Do not push, deploy or alter shared service configuration without explicit task authorization.
+
+- Reservation writers lock Organization then TrainingSession and use Allocation for active insertion/promotion. Group capacity uses PermanentAllocation admission. Preserve release suppression and FIFO; see docs/domain/reservations.md.

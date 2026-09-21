@@ -15,3 +15,7 @@ GT-005 grants group and schedule capabilities independently. Selected-location m
 ## GT-006 additions
 
 The current catalog contains 29 capabilities. sessions.view/manage/cancel are independent; new Owner/Administrator/Trainer/Staff bundles contain 29/24/8/4 grants. Existing arrays are preserved. Trainer-role session access always intersects own TrainerProfile assignment with current location scope, including on overrides. A session at a former group location is authorized by its saved location. Recurring reconciliation requires authority over every affected session and sessions.view/manage/cancel when materialized rows are affected.
+
+## GT-007 reservation extension
+
+[Reservation domain and API](../domain/reservations.md) defines implemented staff/offline bookings, permanent-place assignment, synchronous FIFO waiting promotion, capacity guards, member lookup and relationship views. Existing grants remain unchanged; adoption is explicit. Earlier future-booking statements in this document describe the historical baseline; GT-007 uses active-record uniqueness and organization/session locks for retry safety, without a global idempotency-key service. Attendance, payment and mobile self-service remain deferred.

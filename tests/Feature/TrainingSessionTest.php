@@ -245,7 +245,7 @@ class TrainingSessionTest extends TestCase
         $this->getJson($url)->assertUnprocessable();
         $this->getJson($url.'?from=2026-09-19&until=2026-12-31')->assertUnprocessable();
         $res = $this->getJson($url.'?from=2026-09-19&until=2026-10-01&location_id='.$loc->public_id.'&trainer_id='.$trainer->public_id.'&group_id='.$g->public_id)->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.0.local_date', '2026-09-21');
-        foreach (['organization_id', 'training_group_id', 'trainer_profile_id', 'schedule_rule_id', 'email', 'permissions', 'available', 'reserved_count'] as $key) {
+        foreach (['organization_id', 'training_group_id', 'trainer_profile_id', 'schedule_rule_id', 'email', 'permissions', 'available'] as $key) {
             $this->assertStringNotContainsString('"'.$key.'"', $res->getContent());
         }
         $this->getJson($url.'?from=2026-09-19&until=2026-10-01&status=cancelled')->assertJsonCount(0, 'data');
