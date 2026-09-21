@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\AttendanceRecord;
 use App\Models\Organization;
 use App\Models\TrainerProfile;
 use App\Models\TrainingGroup;
@@ -43,6 +44,7 @@ final class SessionLifecycle
             $s = $id === null ? new TrainingSession : SessionDirectory::query($context, $actor)->where('public_id', $id)->firstOrFail();
             if ($s->exists) {
                 $s = Allocation::lock($s);
+                self::assertNoAttendance($s);
                 if ($s->status !== 'scheduled' || ! $s->starts_at->isFuture()) {
                     throw new SessionConflict('readonly');
                 }
@@ -122,8 +124,16 @@ final class SessionLifecycle
         });
     }
 
+    public static function assertNoAttendance(TrainingSession $s): void
+    {
+        if (AttendanceRecord::query()->where('training_session_id', $s->id)->exists()) {
+            throw new AttendanceConflict('session_has_attendance');
+        }
+    }
+
     public static function markCancelled(TrainingSession $s, string $kind, ?string $reason = null): void
     {
+        self::assertNoAttendance($s);
         $s->forceFill(['status' => 'cancelled', 'cancelled_at' => now(), 'cancellation_kind' => $kind, 'cancellation_reason' => $reason])->save();
     }
 }

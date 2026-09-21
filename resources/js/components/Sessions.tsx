@@ -1,3 +1,4 @@
+import { AttendanceRoster } from './Attendance';
 import { Reservations } from './Reservations';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -322,6 +323,7 @@ export function Sessions({
     const [page, setPage] = useState(1);
     const [revision, setRevision] = useState(0);
     const [result, setResult] = useState<Page<TrainingSession> | null>(null);
+    const [attendanceRevision, setAttendanceRevision] = useState(0);
     const [session, setSession] = useState<TrainingSession | null>(null);
     const [editing, setEditing] = useState(false);
     const [cancelling, setCancelling] = useState(false);
@@ -485,7 +487,22 @@ export function Sessions({
                                 waiting: session.waiting_count ?? 0,
                             })}
                         </p>
+                        <AttendanceRoster
+                            key={`attendance:${session.id}:${session.status}:${session.reserved_count}`}
+                            organization={organization}
+                            session={session}
+                            onChanged={() => {
+                                setAttendanceRevision((v) => v + 1);
+                                void api
+                                    .get<{ data: TrainingSession }>(
+                                        `${base}/${session.id}`,
+                                    )
+                                    .then((r) => setSession(r.data))
+                                    .catch((e) => setError(errorMessage(e)));
+                            }}
+                        />
                         <Reservations
+                            externalRevision={attendanceRevision}
                             key={`${session.id}:${session.capacity}:${session.status}`}
                             organization={organization}
                             sessionId={session.id}

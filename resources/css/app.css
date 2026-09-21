@@ -749,3 +749,8 @@ h2 {
 .session-agenda .record-row p {
     overflow-wrap: anywhere;
 }
+
+.attendance-qr svg {
+    max-width: 100%;
+    height: auto;
+}

@@ -123,3 +123,7 @@ Organization timezone edits return 409 once schedule history exists, preserving 
 ## GT-007 reservation extension
 
 [Reservation domain and API](../domain/reservations.md) defines implemented staff/offline bookings, permanent-place assignment, synchronous FIFO waiting promotion, capacity guards, member lookup and relationship views. Existing grants remain unchanged; adoption is explicit. Earlier future-booking statements in this document describe the historical baseline; GT-007 uses active-record uniqueness and organization/session locks for retry safety, without a global idempotency-key service. Attendance, payment and mobile self-service remain deferred.
+
+## GT-008 attendance extension
+
+GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](../domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.

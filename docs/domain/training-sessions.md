@@ -90,3 +90,7 @@ Native schema owners can bypass DDL invariants; raw SQL can bypass freshness/his
 ## GT-007 consumers
 
 The reservation contract above is now implemented by [GT-007](reservations.md): session capacity updates lock and check active allocations, increases promote FIFO, materialization synchronizes permanent places, and parent cancellation preserves child history without usable entitlement. Snapshot/source identity and trainer conflict invariants remain unchanged. Earlier GT-006-only no-occupancy statements describe that milestone.
+
+## GT-008 attendance extension
+
+GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](../domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.

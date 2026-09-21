@@ -9,11 +9,13 @@ use App\Models\TrainerProfile;
 use App\Models\TrainingGroup;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Support\Allocation;
 use App\Support\SessionMaterializer;
 use App\Support\StaffRole;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 require __DIR__.'/../../vendor/autoload.php';
@@ -93,3 +95,30 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $bookingFixtures[$viewport] = ['date' => $date->toDateString(), 'session' => TrainingSession::where('training_group_id', $group->id)->firstOrFail()->public_id, 'group' => $group->public_id];
 }
 file_put_contents(base_path('.local/browser-booking-fixture.json'), json_encode($bookingFixtures, JSON_THROW_ON_ERROR));
+
+// Isolated, explicitly prepared in-window sessions: no cron or waiting for a session to start.
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Attendance studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Attendance trainer', 'email' => 'attendance-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => [...StaffRole::Trainer->permissions(), 'reservations.manage']])->save();
+    $loc = new Location;
+    $loc->forceFill(['organization_id' => $org->id, 'name' => 'Attendance Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $access->id, 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Attendance Pilates', 'capacity' => 12, 'status' => 'active'])->save();
+    $start = CarbonImmutable::now()->addMinutes(10);
+    $s = new TrainingSession;
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    foreach (['Reserved', 'Walkin'] as $name) {
+        $client = new StudioMember;
+        $client->forceFill(['organization_id' => $org->id, 'first_name' => $name, 'last_name' => 'Offline', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
+        if ($name === 'Reserved') {
+            DB::transaction(function () use ($org, $s, $client, $actor) {
+                Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+                Allocation::reserve($s, $client, $actor, false);
+            });
+        }
+    }
+}

@@ -14,6 +14,7 @@ import { Staff } from './Staff';
 import { Members } from './Members';
 import { Trainers } from './Trainers';
 import { Groups } from './Groups';
+import { AttendanceToday } from './Attendance';
 import { Sessions } from './Sessions';
 import { LanguagePicker } from './LanguagePicker';
 const sections = [
@@ -179,6 +180,7 @@ export function StudioShell() {
                                     'trainers',
                                     'groups',
                                     'schedule',
+                                    'attendance',
                                 ].includes(item) && (
                                     <span
                                         className="nav-dot"
@@ -270,6 +272,11 @@ export function StudioShell() {
                         />
                     ) : section === 'locations' ? (
                         <Locations
+                            key={organization.id}
+                            organization={organization}
+                        />
+                    ) : section === 'attendance' ? (
+                        <AttendanceToday
                             key={organization.id}
                             organization={organization}
                         />

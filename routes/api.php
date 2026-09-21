@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberBookingsController;
 use App\Http\Controllers\OrganizationContextController;
@@ -19,6 +20,15 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::get('/me', ProfileController::class);
     Route::prefix('organizations/{organization}')->whereUuid('organization')->middleware([ResolveOrganization::class, 'can:studio.access'])->group(function (): void {
+        Route::get('/attendance/today', [AttendanceController::class, 'today'])->middleware(['can:attendance.view', 'can:sessions.view']);
+        Route::prefix('sessions/{session}/attendance')->whereUuid('session')->middleware(['can:attendance.view', 'can:sessions.view'])->group(function (): void {
+            Route::get('/', [AttendanceController::class, 'roster']);
+            Route::post('/', [AttendanceController::class, 'mark'])->middleware('can:attendance.manage');
+            Route::post('/correct', [AttendanceController::class, 'mark'])->name('attendance.correct')->middleware('can:attendance.correct');
+            Route::post('/walk-in', [AttendanceController::class, 'walkIn'])->middleware(['can:attendance.manage', 'can:reservations.view', 'can:reservations.manage']);
+            Route::post('/member-lookup', [AttendanceController::class, 'lookup'])->middleware(['can:attendance.manage', 'can:reservations.view', 'can:reservations.manage']);
+            Route::post('/qr', [AttendanceController::class, 'qr'])->middleware('can:attendance.manage');
+        });
         Route::get('/context', OrganizationContextController::class);
         Route::post('/switch', [OrganizationController::class, 'switch']);
         Route::get('/', [OrganizationController::class, 'show'])->middleware('can:organizations.view');

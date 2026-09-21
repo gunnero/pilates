@@ -170,6 +170,7 @@ export type TrainingGroup = {
 };
 
 export type TrainingSession = {
+    attendance_open?: boolean;
     id: string;
     group: { id: string; name: string };
     location: { id: string; name: string };

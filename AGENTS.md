@@ -2,7 +2,7 @@
 
 Read README.md and docs/architecture/overview.md before extending this foundation.
 
-- Work only in the requested task; GT-007 adds reservations, permanent places and FIFO waiting lists; no GT-008 attendance, check-in, packages, payments or mobile self-service. StudioMember never means staff access.
+- Work only in the requested task; GT-008 adds attendance, check-in, walk-ins and QR domain foundations; no GT-009, packages, payments or mobile self-service. StudioMember never means staff access.
 - PostgreSQL is authoritative. Redis is cache/rate limiting only. Never flush the shared Redis service.
 - Every tenant request must authenticate, resolve membership through TenantContext, then authorize a permission before serializing data. No implicit Super Admin bypass.
 - Lifecycle mutations must take the organization row lock, re-resolve current authority, and persist audit evidence in the same transaction. Read docs/architecture/organization-lifecycle.md before extending these writers.
@@ -19,3 +19,5 @@ Read README.md and docs/architecture/overview.md before extending this foundatio
 - Do not push, deploy or alter shared service configuration without explicit task authorization.
 
 - Reservation writers lock Organization then TrainingSession and use Allocation for active insertion/promotion. Group capacity uses PermanentAllocation admission. Preserve release suppression and FIFO; see docs/domain/reservations.md.
+
+- Attendance uses the shared organization/session locks; present attendance blocks reservation cancellation and any attendance protects session edits/cancellation. Read docs/domain/attendance.md. Member/QR tokens never grant identity or capacity.

@@ -84,7 +84,7 @@ final class PermanentSpotController
                 throw new ReservationConflict('permanent_spot_conflict');
             }
             // All concrete sessions affected by reconciliation must remain visible to this actor.
-            $affected = Reservation::query()->where('permanent_spot_id', $p->id)->where('status', 'active')->whereHas('session', fn ($q) => $q->where('starts_at', '>', now()))->pluck('training_session_id');
+            $affected = $p->exists ? Reservation::query()->where('organization_id', $c->organization()->id)->where('permanent_spot_id', $p->id)->where('status', 'active')->whereHas('session', fn ($q) => $q->where('starts_at', '>', now()))->pluck('training_session_id') : collect();
             abort_unless(SessionDirectory::query($c, $u)->whereIn('id', $affected)->count() === $affected->unique()->count(), 404);
             $new = ! $p->exists;
             $p->save();

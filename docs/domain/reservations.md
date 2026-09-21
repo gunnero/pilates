@@ -49,3 +49,7 @@ Lists follow data/meta pagination, 25 default, 100 maximum, page 1–10000. Look
 ## Deferred and operational limits
 
 No attendance/no-show/check-in, QR, financial/package validation, notifications, mobile authentication, priority queue, manual reorder, rooms or configurable cutoffs. Promotion is visible on refresh; no push delivery exists. Group-wide organization locking favors correctness over high tenant write throughput. Materialization/synchronization remains command-driven and bounded; an operator must schedule the command, without manually renewing assignments. Conflict output requires staff action; a permanent place is not permission to exceed an overridden session capacity.
+
+## GT-008 attendance extension
+
+GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](../domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.

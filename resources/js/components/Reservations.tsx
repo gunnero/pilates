@@ -12,10 +12,12 @@ export function Reservations({
     organization,
     sessionId,
     onChanged,
+    externalRevision = 0,
 }: {
     organization: Organization;
     sessionId: string;
     onChanged: () => void;
+    externalRevision?: number;
 }) {
     const { t } = useTranslation();
     const base = `/api/v1/organizations/${organization.id}`;
@@ -66,7 +68,16 @@ export function Reservations({
         return () => {
             live = false;
         };
-    }, [base, sessionId, revision, view, waiting, page, queuePage]);
+    }, [
+        base,
+        sessionId,
+        revision,
+        view,
+        waiting,
+        page,
+        queuePage,
+        externalRevision,
+    ]);
     async function search(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setError('');
