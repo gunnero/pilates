@@ -11,3 +11,7 @@ Password reset uses Laravel's broker and hashed, expiring, single-use reset toke
 Local mail is the non-delivering array transport: reset flow and notifications are tested, real email delivery is deferred. Do not switch to a log transport, which would write reset credentials into logs. Before enabling mail, localize notification content, verify trusted HTTPS origin/provider configuration and rate-limit behavior.
 
 Sanctum personal access tokens and their hashed PostgreSQL storage are installed for future native clients, with a maximum 30-day lifetime. No mobile token-issuance, refresh, device-management or mobile login UI is exposed. Future tokens need narrow abilities, device-scoped revocation and secure OS storage. Organization Gates intersect token abilities with current organization membership permissions; a token never grants membership or higher privilege. `/me` exposes the holder's own minimal profile and organization picker list. Future member identity/access is distinct from staff grants.
+
+## GT-011 member self-service
+
+GT-011 adds one-use hashed invitations, member web entry points and bounded Sanctum native-token issuance. Account advisory locks serialize password/reset consumption; password changes revoke database sessions and tokens atomically. See [authentication, custody and limitations](../domain/member-self-service.md).

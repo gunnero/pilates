@@ -202,4 +202,35 @@ foreach (['desktop', 'mobile'] as $viewport) {
     }
     $notificationFixtures[$viewport] = ['organization' => $org->public_id];
 }
-file_put_contents(base_path('.local/browser-notification-fixture.json'),json_encode($notificationFixtures,JSON_THROW_ON_ERROR));
+file_put_contents(base_path('.local/browser-notification-fixture.json'), json_encode($notificationFixtures, JSON_THROW_ON_ERROR));
+
+// GT011 isolated account fixtures. Tokens are captured only by the guarded test router.
+$selfFixtures = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Member studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Member owner', 'email' => 'member-staff-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $loc = new Location;
+    $loc->forceFill(['organization_id' => $org->id, 'name' => 'Member Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $access->id, 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Member Pilates', 'capacity' => 1, 'status' => 'active'])->save();
+    $start = CarbonImmutable::now()->addDay()->startOfHour();
+    $s = new TrainingSession;
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 1, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Member trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $otherUser = User::factory()->create(['name' => 'Waiting member', 'email' => 'member-wait-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $other = new StudioMember;
+    $other->forceFill(['organization_id' => $org->id, 'user_id' => $otherUser->id, 'first_name' => 'Waiting', 'last_name' => 'Member', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'en'])->save();
+    // An existing second studio link for the account that will activate the first studio invitation.
+    $account = User::factory()->create(['name' => 'Self member', 'email' => 'member-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $second = Organization::create(['name' => 'Second member studio '.$viewport]);
+    $linked = new StudioMember;
+    $linked->forceFill(['organization_id' => $second->id, 'user_id' => $account->id, 'first_name' => 'Second', 'last_name' => 'Profile', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'en'])->save();
+    $attendanceSession = $s->replicate(['public_id']);
+    $attendanceStart = CarbonImmutable::now()->addMinutes(10);
+    $attendanceSession->forceFill(['starts_at' => $attendanceStart, 'ends_at' => $attendanceStart->addHour(), 'local_date' => $attendanceStart->setTimezone($org->timezone)->toDateString()])->save();
+    $selfFixtures[$viewport] = ['organization' => $org->public_id, 'second' => $second->public_id, 'session' => $s->public_id, 'other_member' => $other->public_id, 'attendance_session' => $attendanceSession->public_id];
+}
+file_put_contents(base_path('.local/browser-member-fixture.json'), json_encode($selfFixtures, JSON_THROW_ON_ERROR));

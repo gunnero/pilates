@@ -14,7 +14,7 @@ export default defineConfig({
     ],
     webServer: {
         command:
-            'scripts/prepare-browser && php artisan serve --env=e2e --host=127.0.0.1 --port=8011',
+            'scripts/prepare-browser && php -S 127.0.0.1:8011 -t public tests/browser/router.php',
         url: 'http://127.0.0.1:8011/up',
         reuseExistingServer: false,
         timeout: 30000,

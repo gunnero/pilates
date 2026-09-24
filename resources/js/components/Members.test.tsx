@@ -9,6 +9,7 @@ import {
     type StudioMember,
 } from '../lib/api';
 import i18n from '../lib/i18n';
+vi.mock('./MemberInvitations', () => ({ MemberInvitations: () => null }));
 vi.mock('../lib/api', async (original) => ({
     ...(await original<typeof import('../lib/api')>()),
     api: { get: vi.fn(), post: vi.fn(), patch: vi.fn() },

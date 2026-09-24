@@ -2,7 +2,7 @@
 
 Read README.md and docs/architecture/overview.md before extending this foundation.
 
-- Work only in the requested task; GT-010 adds notifications on the existing membership/cash domains; no GT-011 self-service, GT-012 mobile app, advanced packages or card payments. StudioMember never means staff access.
+- Work only in the requested task; GT-011 adds member accounts and self-service; no GT-012/native app, PWA, production push, card payments or QR member check-in UI. StudioMember never means staff access.
 - PostgreSQL is authoritative. Redis is cache/rate limiting only. Never flush the shared Redis service.
 - Every staff tenant request must authenticate, resolve membership through TenantContext, then authorize a permission before serializing data. Notification-only member requests use authenticated User-derived RecipientAccess. No implicit Super Admin bypass.
 - Lifecycle mutations must take the organization row lock, re-resolve current authority, and persist audit evidence in the same transaction. Read docs/architecture/organization-lifecycle.md before extending these writers.
@@ -25,3 +25,5 @@ Read README.md and docs/architecture/overview.md before extending this foundatio
 - Financial writers use the organization lock and independent view/manage/record/correct gates. Cash/reversal records are append-only; sold membership snapshots are immutable. Read docs/domain/cash-payments.md before extending finance. Never infer financial access from attendance, TrainerProfile or location scope.
 
 - Notifications derive recipients from authenticated User links or current staff scope. Evidence/outbox creation shares domain transactions; delivery runs outside them with leases and idempotency. Read docs/domain/notifications.md. Never include monetary values or private customer contents in notification payloads/logs.
+
+- Member self-service resolves User → active StudioMember → active Organization via MemberContext. Reuse Allocation for bookings and GT010 Inbox for notifications. Invitation activation and password/reset/token operations use the per-email account lock; see docs/domain/member-self-service.md.

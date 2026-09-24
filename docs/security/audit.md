@@ -42,3 +42,7 @@ Plan changes, membership assignment/cancellation, cash recording/reversal and ex
 ## GT-010 notifications
 
 GT-010 uses immutable notification evidence plus bounded attempt history. Preference changes and delivery retries/failures use audit actions notification.preferences_changed, notification.delivery_retry and notification.delivery_failed. Audit metadata contains booleans, attempt/channel/error codes; no notification contents. Ordinary reads do not add audit noise. Domain event UUIDs version repeatable notifications.
+
+## GT-011 member self-service
+
+GT-011 audits invitation creation/revocation, explicit account linking, studio switching and changed profile field names in tenant transactions. Global account_security_events provides immutable password/reset/token event evidence without tenant context, metadata or secrets. See [member lifecycle](../domain/member-self-service.md).

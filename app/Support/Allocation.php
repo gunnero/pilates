@@ -97,8 +97,11 @@ final class Allocation
     }
 
     /** @return array{outcome:string,reservation:?Reservation,waiting_entry:?WaitingListEntry} */
-    public static function reserve(TrainingSession $s, StudioMember $m, User $actor, bool $allowWaiting, bool $walkIn = false): array
+    public static function reserve(TrainingSession $s, StudioMember $m, User $actor, bool $allowWaiting, bool $walkIn = false, string $source = 'staff'): array
     {
+        if (! in_array($source, ['staff', 'member'], true)) {
+            throw new LogicException('Invalid reservation source');
+        }
         $s = self::lock($s);
         self::eligible($s, $walkIn);
         if ($m->organization_id !== $s->organization_id || $m->status !== MemberStatus::Active) {
@@ -114,7 +117,7 @@ final class Allocation
             return ['outcome' => 'already_waiting', 'reservation' => null, 'waiting_entry' => $w];
         }
         if (self::count($s) < $s->capacity) {
-            $r = self::insert($s, $m, 'staff', $actor, null, $walkIn);
+            $r = self::insert($s, $m, $source, $actor, null, $walkIn);
             Audit::record(Organization::findOrFail($s->organization_id), $actor, 'reservation.created', 'reservation', $r->public_id, ['session_id' => $s->public_id]);
 
             return ['outcome' => 'reserved', 'reservation' => $r, 'waiting_entry' => null];
@@ -126,7 +129,7 @@ final class Allocation
             throw new ReservationConflict('limit');
         }
         $w = new WaitingListEntry;
-        $w->forceFill(['organization_id' => $s->organization_id, 'training_session_id' => $s->id, 'studio_member_id' => $m->id, 'source' => 'staff', 'status' => 'waiting', 'created_by' => $actor->id, 'joined_at' => now()])->save();
+        $w->forceFill(['organization_id' => $s->organization_id, 'training_session_id' => $s->id, 'studio_member_id' => $m->id, 'source' => $source, 'status' => 'waiting', 'created_by' => $actor->id, 'joined_at' => now()])->save();
         Audit::record(Organization::findOrFail($s->organization_id), $actor, 'waiting_list.joined', 'waiting_list_entry', $w->public_id, ['session_id' => $s->public_id]);
 
         return ['outcome' => 'waitlisted', 'reservation' => null, 'waiting_entry' => $w];
@@ -150,5 +153,14 @@ final class Allocation
         }
         Audit::record(Organization::findOrFail($s->organization_id), $actor, 'reservation.cancelled', 'reservation', $r->public_id, ['session_id' => $s->public_id, 'occurrence_release' => $suppress]);
         self::promote($s, $actor);
+    }
+
+    public static function cancelWaiting(WaitingListEntry $w, User $actor): void
+    {
+        self::lock($w->session);
+        if ($w->status === 'waiting') {
+            $w->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
+            Audit::record(Organization::findOrFail($w->organization_id), $actor, 'waiting_list.cancelled', 'waiting_list_entry', $w->public_id, []);
+        }
     }
 }

@@ -75,3 +75,7 @@ GT-008 now implements durable attendance, staff/trainer roster and today workflo
 [Domain, API and permission contracts](docs/domain/cash-payments.md) cover duration plans, immutable sold periods, partial cash payments, full reversals and responsive membership workflows. No existing staff grants are expanded during migration. Trusted adoption: `php artisan gt:finance-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason="Approved adoption"`. Read-only consistency: `php artisan gt:finance:check`. Do not use financial membership state to infer reservation/attendance eligibility.
 
 See [notification contracts and operations](docs/domain/notifications.md) and [GT-010 verification](docs/development/gt-010-verification.md).
+
+## GT-011 member self-service
+
+GT-011 member accounts and responsive self-service are implemented. See [identity, activation and API contracts](docs/domain/member-self-service.md) and [verification](docs/development/gt-011-verification.md). Use `/member/login` for member access. GT-012 is deferred.

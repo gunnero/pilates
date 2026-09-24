@@ -825,3 +825,36 @@ h2 {
     min-height: auto;
     margin: 0;
 }
+
+.member-portal {
+    max-width: 1080px;
+    margin-inline: auto;
+}
+.member-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block: 1.5rem;
+}
+.member-nav [aria-current='page'] {
+    border-color: currentColor;
+    font-weight: 700;
+}
+.member-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 1rem;
+}
+.member-card {
+    padding: 1rem;
+    border: 1px solid #d9ddd9;
+    border-radius: 12px;
+    margin-block: 0.75rem;
+    overflow-wrap: anywhere;
+}
+.member-card .actions {
+    flex-wrap: wrap;
+}
+.member-portal section {
+    margin-block: 1.25rem;
+}

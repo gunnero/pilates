@@ -1,9 +1,13 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MemberAccountController;
 use App\Http\Controllers\MemberBookingsController;
+use App\Http\Controllers\MemberInvitationController;
+use App\Http\Controllers\MemberSelfServiceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationContextController;
 use App\Http\Controllers\OrganizationController;
@@ -19,6 +23,41 @@ use App\Http\Controllers\TrainingSessionController;
 use App\Http\Middleware\ResolveOrganization;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('v1/member-auth')->group(function (): void {
+    Route::post('/activate', [MemberInvitationController::class, 'activate'])->middleware('throttle:activation');
+    Route::post('/token', [MemberAccountController::class, 'token'])->middleware('throttle:login');
+    Route::post('/forgot-password', [PasswordController::class, 'forgot'])->middleware('throttle:password');
+    Route::post('/reset-password', [PasswordController::class, 'reset'])->middleware('throttle:password');
+});
+Route::prefix('v1/member')->middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
+    Route::get('/account', [MemberAccountController::class, 'current']);
+    Route::get('/organizations', [MemberAccountController::class, 'organizations']);
+    Route::post('/password', [MemberAccountController::class, 'password'])->middleware('throttle:password');
+    Route::post('/token/logout', [MemberAccountController::class, 'logoutToken']);
+    Route::post('/tokens/revoke', [MemberAccountController::class, 'revokeTokens'])->middleware('throttle:member-write');
+    Route::prefix('organizations/{organization}')->whereUuid('organization')->group(function (): void {
+        Route::post('/switch', [MemberAccountController::class, 'switch'])->middleware('throttle:member-write');
+        Route::get('/profile', [MemberSelfServiceController::class, 'profile']);
+        Route::patch('/profile', [MemberSelfServiceController::class, 'updateProfile'])->middleware('throttle:member-write');
+        Route::get('/groups', [MemberSelfServiceController::class, 'groups']);
+        Route::get('/groups/{group}', [MemberSelfServiceController::class, 'groups'])->whereUuid('group');
+        Route::get('/sessions', [MemberSelfServiceController::class, 'sessions']);
+        Route::get('/sessions/{session}', [MemberSelfServiceController::class, 'session'])->whereUuid('session');
+        Route::post('/sessions/{session}/reservations', [MemberSelfServiceController::class, 'reserve'])->whereUuid('session')->middleware('throttle:member-write');
+        Route::get('/reservations/{reservation}', [MemberSelfServiceController::class, 'reservation'])->whereUuid('reservation');
+        Route::post('/reservations/{reservation}/cancel', [MemberSelfServiceController::class, 'cancel'])->whereUuid('reservation')->middleware('throttle:member-write');
+        Route::get('/waiting-list', [MemberSelfServiceController::class, 'waiting']);
+        Route::get('/waiting-list/{waiting}', [MemberSelfServiceController::class, 'waiting'])->whereUuid('waiting');
+        Route::post('/waiting-list/{reservation}/cancel', [MemberSelfServiceController::class, 'cancel'])->whereUuid('reservation')->name('self.waiting.cancel')->middleware('throttle:member-write');
+        Route::get('/attendance', [MemberSelfServiceController::class, 'attendance']);
+        Route::get('/attendance/{attendance}', [MemberSelfServiceController::class, 'attendance'])->whereUuid('attendance');
+        Route::get('/memberships', [MemberSelfServiceController::class, 'memberships']);
+        Route::get('/memberships/{membership}', [MemberSelfServiceController::class, 'memberships'])->whereUuid('membership');
+        Route::get('/payments', [MemberSelfServiceController::class, 'payments']);
+        Route::get('/payments/{payment}', [MemberSelfServiceController::class, 'payments'])->whereUuid('payment');
+    });
+});
+
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::get('/me', ProfileController::class);
     Route::get('/notification-contexts', [NotificationController::class, 'contexts']);
@@ -31,6 +70,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::post('/{notification}/read', [NotificationController::class, 'read'])->whereUuid('notification');
     });
     Route::prefix('organizations/{organization}')->whereUuid('organization')->middleware([ResolveOrganization::class, 'can:studio.access'])->group(function (): void {
+        Route::get('/members/{member}/invitations', [MemberInvitationController::class, 'index'])->whereUuid('member');
+        Route::post('/members/{member}/invitations', [MemberInvitationController::class, 'store'])->whereUuid('member')->middleware('throttle:member-write');
+        Route::post('/member-invitations/{invitation}/revoke', [MemberInvitationController::class, 'revoke'])->whereUuid('invitation')->middleware('throttle:member-write');
         Route::get('/attendance/today', [AttendanceController::class, 'today'])->middleware(['can:attendance.view', 'can:sessions.view']);
         Route::prefix('sessions/{session}/attendance')->whereUuid('session')->middleware(['can:attendance.view', 'can:sessions.view'])->group(function (): void {
             Route::get('/', [AttendanceController::class, 'roster']);

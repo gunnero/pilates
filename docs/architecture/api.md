@@ -135,3 +135,7 @@ Membership plans, concrete memberships, financial member summaries and append-on
 ## GT-010 notifications
 
 GT-010 adds notification-contexts and organization-scoped notifications list/detail, first-read/bulk-read and preferences endpoints. See [complete notification API and bounds](../domain/notifications.md#inbox-preferences-and-authorization). This is notification-only access for existing users, not a general member API.
+
+## GT-011 member self-service
+
+GT-011 versioned account/member API endpoints, pagination, field allowlists, timezone contracts and native authentication are documented in [member self-service](../domain/member-self-service.md). Existing notification endpoints are reused; financial and attendance endpoints are read-only.

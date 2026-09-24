@@ -1,0 +1,3 @@
+<?php
+
+return ['invite_subject' => 'Activate your studio account', 'invite_message' => "You have been invited to link your studio member profile. Open this one-time link within 24 hours: :url\nIf you already have an account, use its current password. Otherwise choose a strong new password. Ignore this invitation if it was not intended for you.", 'activation_invalid' => 'The invitation or account credentials are invalid. Ask your studio for a new invitation if needed.', 'activated' => 'Your studio account is linked. Sign in to continue.', 'range' => 'Use an inclusive date range of at most 56 days.'];

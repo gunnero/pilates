@@ -5,8 +5,10 @@ import { api, ApiError } from '../lib/api';
 import { LanguagePicker } from './LanguagePicker';
 export function AuthForm({
     mode = 'login',
+    member = false,
 }: {
-    mode?: 'login' | 'forgot' | 'reset';
+    mode?: 'login' | 'forgot' | 'reset' | 'activate';
+    member?: boolean;
 }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -22,14 +24,21 @@ export function AuthForm({
         const data = Object.fromEntries(new FormData(event.currentTarget));
         try {
             await api.post(
-                `/auth/${mode === 'login' ? 'login' : mode === 'forgot' ? 'forgot-password' : 'reset-password'}`,
+                `/auth/${mode === 'login' ? 'login' : mode === 'forgot' ? 'forgot-password' : mode === 'activate' ? 'activate' : 'reset-password'}`,
                 {
                     ...data,
-                    ...(mode === 'reset' ? { token: params.get('token') } : {}),
+                    ...(mode === 'reset' || mode === 'activate'
+                        ? { token: params.get('token') }
+                        : {}),
                 },
             );
-            if (mode === 'login') navigate('/', { replace: true });
-            else setDone(true);
+            if (mode === 'login')
+                navigate(member ? '/member' : '/', { replace: true });
+            else {
+                setDone(true);
+                if (mode === 'activate' || mode === 'reset')
+                    window.history.replaceState(null, '', location.pathname);
+            }
         } catch (err) {
             setError(
                 err instanceof ApiError
@@ -47,7 +56,9 @@ export function AuthForm({
             ? 'loginTitle'
             : mode === 'forgot'
               ? 'forgotTitle'
-              : 'resetTitle';
+              : mode === 'activate'
+                ? 'self.activate'
+                : 'resetTitle';
     return (
         <div className="auth-page">
             <header className="auth-header">
@@ -58,7 +69,9 @@ export function AuthForm({
                 <LanguagePicker />
             </header>
             <main className="auth-card">
-                <p className="eyebrow">{t('studioAdmin')}</p>
+                <p className="eyebrow">
+                    {t(member ? 'self.memberArea' : 'studioAdmin')}
+                </p>
                 <h1>{t(title)}</h1>
                 <p className="muted">
                     {t(
@@ -66,12 +79,20 @@ export function AuthForm({
                             ? 'loginDescription'
                             : mode === 'forgot'
                               ? 'forgotDescription'
-                              : 'resetDescription',
+                              : mode === 'activate'
+                                ? 'self.activationHelp'
+                                : 'resetDescription',
                     )}
                 </p>
                 {done ? (
                     <p role="status" className="notice">
-                        {t(mode === 'forgot' ? 'resetSent' : 'resetDone')}
+                        {t(
+                            mode === 'forgot'
+                                ? 'resetSent'
+                                : mode === 'activate'
+                                  ? 'self.activated'
+                                  : 'resetDone',
+                        )}
                     </p>
                 ) : (
                     <form onSubmit={(event) => void submit(event)}>
@@ -105,7 +126,7 @@ export function AuthForm({
                                 />
                             </label>
                         )}
-                        {mode === 'reset' && (
+                        {(mode === 'reset' || mode === 'activate') && (
                             <label>
                                 {t('confirmPassword')}
                                 <input
@@ -113,7 +134,9 @@ export function AuthForm({
                                     type="password"
                                     autoComplete="new-password"
                                     required
-                                    minLength={12}
+                                    minLength={
+                                        mode === 'reset' ? 12 : undefined
+                                    }
                                     maxLength={1024}
                                 />
                             </label>
@@ -138,7 +161,15 @@ export function AuthForm({
                 )}
                 <Link
                     className="text-link"
-                    to={mode === 'login' ? '/forgot-password' : '/login'}
+                    to={
+                        mode === 'login'
+                            ? member
+                                ? '/member/forgot-password'
+                                : '/forgot-password'
+                            : member
+                              ? '/member/login'
+                              : '/login'
+                    }
                 >
                     {t(mode === 'login' ? 'forgot' : 'backLogin')}
                 </Link>

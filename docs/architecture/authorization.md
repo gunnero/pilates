@@ -31,3 +31,7 @@ Financial grants are explicit organization-wide powers, even for selected-locati
 ## GT-010 notifications
 
 GT-010 notification endpoints authenticate then derive recipient ownership. Staff continue through TenantContext, studio.access and session location/trainer scope; member inbox identity comes only from the existing active StudioMember.user_id link. Token abilities notifications.view/read restrict access further and add no stored staff grants. No caller-selected recipient or financial payload is accepted. See [recipient contract](../domain/notifications.md).
+
+## GT-011 member self-service
+
+GT-011 member authority is User → active linked StudioMember → active Organization, resolved by MemberContext for every request and again under the organization lock for mutations. Member bearer abilities intersect ownership; they confer no staff powers. Staff invitations require all-location members.view, members.update and members.status.manage. Existing grants remain unchanged. See [member authorization](../domain/member-self-service.md).

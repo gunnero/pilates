@@ -8,7 +8,6 @@ use App\Http\Requests\ReservationRequest;
 use App\Models\StudioMember;
 use App\Models\User;
 use App\Support\Allocation;
-use App\Support\Audit;
 use App\Support\GroupDirectory;
 use App\Support\Lifecycle;
 use App\Support\Permission;
@@ -80,11 +79,7 @@ final class ReservationController
             Gate::forUser($u)->authorize(($waiting ? Permission::WaitingListView : Permission::ReservationsView)->value);
             if ($waiting) {
                 $w = D::waitingEntries($c, $u)->where('public_id', $reservation)->firstOrFail();
-                Allocation::lock($w->session);
-                if ($w->status === 'waiting') {
-                    $w->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
-                    Audit::record($c->organization(), $u, 'waiting_list.cancelled', 'waiting_list_entry', $w->public_id, []);
-                }
+                Allocation::cancelWaiting($w, $u);
             } else {
                 $row = D::reservations($c, $u)->where('public_id', $reservation)->firstOrFail();
                 Allocation::cancel(Allocation::lock($row->session), $row, $u);

@@ -27,3 +27,7 @@ See [membership and cash contracts](../domain/cash-payments.md). Immutable comme
 ## GT-010 notifications
 
 GT-010 adds immutable tenant/recipient notification evidence and a durable polling outbox. Existing lifecycle transactions create evidence atomically; provider-neutral delivery runs outside those transactions. Notification-only inbox access supports existing authenticated member links without extending member self-service. See [notifications](../domain/notifications.md).
+
+## GT-011 member self-service
+
+GT-011 adds optional account activation and member self-service using the same global User identity and existing StudioMember link. MemberContext resolves own tenant access separately from staff TenantContext. Reservations share Allocation; history is read-only. See [member self-service](../domain/member-self-service.md).

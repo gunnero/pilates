@@ -17,7 +17,7 @@ class TrainingSessionMigrationTest extends TestCase
 
     public function test_populated_gt005_upgrade_preserves_all_data_and_grants(): void
     {
-        Artisan::call('migrate:rollback', ['--step' => 5, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 6, '--force' => true]);
         // Reuse legacy grants while building a populated pre-session fixture.
         $org = Organization::create(['name' => 'Legacy']);
         $user = User::factory()->create();

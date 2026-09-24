@@ -1,3 +1,4 @@
+import { MemberInvitations } from './MemberInvitations';
 import { Finance } from './Finance';
 import { MemberBookings } from './MemberBookings';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -444,6 +445,10 @@ export function Members({ organization }: { organization: Organization }) {
                                 </button>
                             )}
                     </div>
+                    <MemberInvitations
+                        organization={organization}
+                        memberId={profile.id}
+                    />
                     <Finance
                         organization={organization}
                         memberId={profile.id}

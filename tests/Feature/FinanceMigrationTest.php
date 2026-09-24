@@ -36,7 +36,7 @@ class FinanceMigrationTest extends TestCase
         $this->travelTo($s->starts_at->subMinutes(10));
         $member = StudioMember::orderBy('id')->firstOrFail();
         $this->postJson($this->base($o)."/sessions/$s->public_id/attendance", ['member_id' => $member->public_id, 'status' => 'present'])->assertOk();
-        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 3, '--force' => true]);
         $tables = ['users', 'organizations', 'locations', 'organization_memberships', 'membership_locations', 'studio_members', 'trainer_profiles', 'training_groups', 'schedule_rules', 'training_sessions', 'reservations', 'waiting_list_entries', 'permanent_spots', 'permanent_spot_releases', 'attendance_records', 'audit_events'];
         $before = [];
         foreach ($tables as $table) {
