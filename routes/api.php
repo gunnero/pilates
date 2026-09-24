@@ -6,6 +6,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberAccountController;
 use App\Http\Controllers\MemberBookingsController;
+use App\Http\Controllers\MemberCheckInController;
 use App\Http\Controllers\MemberInvitationController;
 use App\Http\Controllers\MemberSelfServiceController;
 use App\Http\Controllers\NotificationController;
@@ -43,6 +44,7 @@ Route::prefix('v1/member')->middleware(['auth:sanctum', 'throttle:api'])->group(
         Route::get('/groups/{group}', [MemberSelfServiceController::class, 'groups'])->whereUuid('group');
         Route::get('/sessions', [MemberSelfServiceController::class, 'sessions']);
         Route::get('/sessions/{session}', [MemberSelfServiceController::class, 'session'])->whereUuid('session');
+        Route::post('/sessions/{session}/check-in', MemberCheckInController::class)->whereUuid('session')->middleware('throttle:member-check-in');
         Route::post('/sessions/{session}/reservations', [MemberSelfServiceController::class, 'reserve'])->whereUuid('session')->middleware('throttle:member-write');
         Route::get('/reservations/{reservation}', [MemberSelfServiceController::class, 'reservation'])->whereUuid('reservation');
         Route::post('/reservations/{reservation}/cancel', [MemberSelfServiceController::class, 'cancel'])->whereUuid('reservation')->middleware('throttle:member-write');
@@ -80,7 +82,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
             Route::post('/correct', [AttendanceController::class, 'mark'])->name('attendance.correct')->middleware('can:attendance.correct');
             Route::post('/walk-in', [AttendanceController::class, 'walkIn'])->middleware(['can:attendance.manage', 'can:reservations.view', 'can:reservations.manage']);
             Route::post('/member-lookup', [AttendanceController::class, 'lookup'])->middleware(['can:attendance.manage', 'can:reservations.view', 'can:reservations.manage']);
-            Route::post('/qr', [AttendanceController::class, 'qr'])->middleware('can:attendance.manage');
+            Route::post('/qr', [AttendanceController::class, 'qr'])->middleware(['can:attendance.manage', 'throttle:attendance-qr']);
         });
         Route::get('/finance/metrics', [FinanceController::class, 'metrics']);
         Route::get('/membership-plans', [FinanceController::class, 'plans']);

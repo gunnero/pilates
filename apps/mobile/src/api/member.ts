@@ -1,5 +1,6 @@
 import { ApiClient, pageQuery, uuid } from './client';
 import type {
+    CheckInResult,
     Account,
     Organization,
     Page,
@@ -118,6 +119,14 @@ export class MemberApi {
             `${this.base(org)}/sessions/${uuid(id)}`,
             'GET',
             undefined,
+            signal,
+        );
+    }
+    checkIn(org: string, id: string, credential: string, signal?: AbortSignal) {
+        return this.client.request<{ data: CheckInResult }>(
+            `${this.base(org)}/sessions/${uuid(id)}/check-in`,
+            'POST',
+            { credential },
             signal,
         );
     }

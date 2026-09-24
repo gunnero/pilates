@@ -32,6 +32,7 @@ import {
     Sessions,
     WaitingList,
 } from './screens/Domain';
+import { CheckIn } from './screens/CheckIn';
 import { Profile } from './screens/Profile';
 import { parseLink, type MemberLink } from './navigation/links';
 import type { Routes } from './navigation/types';
@@ -184,12 +185,18 @@ function Flow() {
             }}
         >
             <Stack.Navigator
+                initialRouteName="Home"
                 screenOptions={{
                     headerStyle: { backgroundColor: '#f5f4ef' },
                     headerTintColor: '#173a38',
                     headerBackTitle: t('back'),
                 }}
             >
+                <Stack.Screen
+                    name="CheckIn"
+                    component={CheckIn}
+                    options={{ title: t('checkIn') }}
+                />
                 <Stack.Screen
                     name="Home"
                     component={Home}

@@ -29,3 +29,5 @@ Read README.md and docs/architecture/overview.md before extending this foundatio
 - Member self-service resolves User → active StudioMember → active Organization via MemberContext. Reuse Allocation for bookings and GT010 Inbox for notifications. Invitation activation and password/reset/token operations use the per-email account lock; see docs/domain/member-self-service.md.
 
 - Mobile credentials belong only in native secure storage. Keep query data in bounded memory scoped by account and organization; clear on logout/switch. All member writes use the existing server API. Read docs/mobile/overview.md.
+
+- GT-013 secure member check-in reuses GT-008 Attendance under MemberContext and organization/session locks. Read docs/domain/secure-check-in.md. QR never grants identity, staff access, booking or capacity. Keep raw credentials out of logs; do not start GT-014.

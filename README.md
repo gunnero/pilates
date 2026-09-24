@@ -81,3 +81,5 @@ See [notification contracts and operations](docs/domain/notifications.md) and [G
 GT-011 member accounts and responsive self-service are implemented. See [identity, activation and API contracts](docs/domain/member-self-service.md) and [verification](docs/development/gt-011-verification.md). Use `/member/login` for member access. GT-012 is deferred.
 
 GT-012 adds the iOS/Android member app in `apps/mobile`. See [mobile setup and contracts](docs/mobile/overview.md). Run `pnpm mobile:check` alongside the established repository checks. Native signing/device execution and production push delivery require separately configured environments.
+
+GT-013 adds secure member QR check-in, contextual native scanning and a polling trainer attendance roster. See [the secure check-in contract](docs/domain/secure-check-in.md) for operation and limitations.

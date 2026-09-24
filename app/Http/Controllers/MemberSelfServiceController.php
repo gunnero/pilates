@@ -156,7 +156,7 @@ final class MemberSelfServiceController
         if ($r->filled('from')) {
             $q->whereHas('reservation.session', fn ($q) => $q->whereBetween('local_date', [$r->validated('from'), $r->validated('until', CarbonImmutable::parse($r->validated('from'))->addDays(55)->toDateString())]));
         }
-        $represent = fn ($a) => ['id' => $a->public_id, 'status' => $a->status, 'checked_in_at' => $a->checked_in_at?->toISOString(), 'session' => ['id' => $a->reservation->session->public_id, 'name' => $a->reservation->session->group_name, 'starts_at' => $a->reservation->session->starts_at->toISOString(), 'timezone' => $a->reservation->session->timezone]];
+        $represent = fn ($a) => ['id' => $a->public_id, 'status' => $a->status, 'method' => $a->check_in_method, 'checked_in_at' => $a->checked_in_at?->toISOString(), 'session' => ['id' => $a->reservation->session->public_id, 'name' => $a->reservation->session->group_name, 'starts_at' => $a->reservation->session->starts_at->toISOString(), 'timezone' => $a->reservation->session->timezone]];
         if ($attendance !== null) {
             return response()->json(['data' => $represent($q->where('public_id', $attendance)->firstOrFail())]);
         }

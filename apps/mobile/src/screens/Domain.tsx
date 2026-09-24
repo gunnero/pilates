@@ -395,6 +395,7 @@ export function Activity() {
             />
             {(
                 [
+                    ['CheckIn', 'checkIn'],
                     ['Waiting', 'waiting'],
                     ['Attendance', 'attendance'],
                     ['Memberships', 'memberships'],
@@ -468,6 +469,7 @@ export function AttendanceHistory() {
                         ({a.session.timezone})
                     </Body>
                     <Body>{t(statusKey(a.status))}</Body>
+                    {a.method === 'qr' && <Body>{t('qrMethod')}</Body>}
                 </Card>
             )}
         />
@@ -663,6 +665,7 @@ export function Home() {
                     <View style={styles.row}>
                         {(
                             [
+                                ['CheckIn', 'checkIn'],
                                 ['Sessions', 'sessions'],
                                 ['Groups', 'groups'],
                                 ['Activity', 'activity'],

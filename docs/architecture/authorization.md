@@ -35,3 +35,5 @@ GT-010 notification endpoints authenticate then derive recipient ownership. Staf
 ## GT-011 member self-service
 
 GT-011 member authority is User → active linked StudioMember → active Organization, resolved by MemberContext for every request and again under the organization lock for mutations. Member bearer abilities intersect ownership; they confer no staff powers. Staff invitations require all-location members.view, members.update and members.status.manage. Existing grants remain unchanged. See [member authorization](../domain/member-self-service.md).
+
+GT-013 adds no permissions or grants. QR issuance reuses attendance.manage/view and session/location/trainer scope; member redemption independently requires active linked-member context and member.write under the organization lock. Possession of a QR never grants identity, staff authority, a reservation or capacity. See [secure check-in](../domain/secure-check-in.md).

@@ -10,7 +10,20 @@
             "bundleIdentifier": "studio.gt.member",
             "supportsTablet": false
         },
-        "android": { "package": "studio.gt.member" },
-        "plugins": ["expo-secure-store", "expo-notifications"]
+        "android": {
+            "package": "studio.gt.member"
+        },
+        "plugins": [
+            "expo-secure-store",
+            "expo-notifications",
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Камерата се користи само за скенирање QR за пријавување присуство. Camera access is used only to scan the studio check-in QR.",
+                    "microphonePermission": false,
+                    "recordAudioAndroid": false
+                }
+            ]
+        ]
     }
 }

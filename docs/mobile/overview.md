@@ -81,3 +81,7 @@ Run `pnpm mobile:check` for mobile TypeScript, Jest, Expo Doctor and both Hermes
 Run the complete repository verification and `pnpm test:e2e`. PHPUnit and browser/native API flows share only guarded local gt_test and must run sequentially. Native API tests use independent fixtures and the production mobile API/session classes over HTTP; they are not native-device tests. Test-only invitation/reset capture is outside tracked source, behind the existing e2e/gt_test/loopback guard; it never changes production routes.
 
 The scoped `xcode>uuid: 11.1.1` override removes GHSA-w5hq-g745-h8pq while retaining xcode's used CommonJS v4 API. Native prebuild verifies that integration. Review/remove the override when upstream fixes its dependency. All other dependency versions remain lockfile controlled; no audit suppression is used.
+
+## GT-013 camera check-in
+
+Home/Activity now include a contextual QR scanner using Expo Camera. The app strictly parses `GTQR1` envelopes, suppresses duplicate scan events, requires server confirmation and displays own QR history. Camera access is scoped to the focused foreground screen; no media or microphone capture is used. Permission denial and network ambiguity offer manual fallback or server attendance verification. See [secure check-in contract](../domain/secure-check-in.md). Trainer QR/roster management remains in responsive web.

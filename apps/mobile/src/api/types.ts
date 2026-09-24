@@ -67,7 +67,18 @@ export type Waiting = {
     timezone: string;
     can_cancel: boolean;
 };
+export type CheckInResult = {
+    outcome: 'checked_in' | 'already_present';
+    attendance: {
+        id: string;
+        status: 'present';
+        method: string;
+        checked_in_at: string;
+    };
+    session: { id: string; name: string; starts_at: string; timezone: string };
+};
 export type Attendance = {
+    method: string;
     id: string;
     status: string;
     checked_in_at: string | null;

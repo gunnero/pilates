@@ -14,6 +14,7 @@ use App\Models\TrainingGroup;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Support\Allocation;
+use App\Support\AttendanceQr;
 use App\Support\FinanceLifecycle;
 use App\Support\Notifications\Delivery;
 use App\Support\Notifications\Generate;
@@ -22,6 +23,7 @@ use App\Support\StaffRole;
 use App\Support\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -234,3 +236,48 @@ foreach (['desktop', 'mobile', 'native-desktop', 'native-mobile'] as $viewport) 
     $selfFixtures[$viewport] = ['organization' => $org->public_id, 'second' => $second->public_id, 'session' => $s->public_id, 'other_member' => $other->public_id, 'attendance_session' => $attendanceSession->public_id];
 }
 file_put_contents(base_path('.local/browser-member-fixture.json'), json_encode($selfFixtures, JSON_THROW_ON_ERROR));
+
+$checkInFixtures = [];
+// Isolated, explicitly prepared in-window sessions: no cron or waiting for a session to start.
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'QR studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Attendance trainer', 'email' => 'qr-staff-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => [...StaffRole::Trainer->permissions(), 'reservations.manage']])->save();
+    $loc = new Location;
+    $loc->forceFill(['organization_id' => $org->id, 'name' => 'Attendance Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $access->id, 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'QR Pilates', 'capacity' => 12, 'status' => 'active'])->save();
+    $start = CarbonImmutable::now()->addMinutes(10);
+    $s = new TrainingSession;
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $ids = [];
+    foreach (['First', 'Second', 'Waiting', 'Fallback'] as $name) {
+        $account = User::factory()->create(['name' => 'QR '.$name, 'email' => 'qr-'.strtolower($name).'-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+        $client = new StudioMember;
+        $client->forceFill(['organization_id' => $org->id, 'user_id' => $account->id, 'first_name' => $name, 'last_name' => 'QR', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'en'])->save();
+        $ids[$name] = $client->public_id;
+        if ($name !== 'Fallback') {
+            DB::transaction(function () use ($org, $s, $client, $actor, $name) {
+                Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+                if ($name === 'Waiting') {
+                    $s->capacity = 2;
+                    $s->save();
+                }
+                Allocation::reserve($s, $client, $actor, true);
+            });
+        }
+    }
+    // A deterministically expired screenshot; private isolated test fixture only.
+    $clock = now();
+    Carbon::setTestNow($clock->copy()->subSeconds(91));
+    CarbonImmutable::setTestNow($clock->copy()->subSeconds(91));
+    $expired = AttendanceQr::issue($s)['token'];
+    Carbon::setTestNow();
+    CarbonImmutable::setTestNow();
+    $checkInFixtures[$viewport] = ['organization' => $org->public_id, 'session' => $s->public_id, 'members' => $ids, 'expired' => $expired];
+}
+umask(0077);
+file_put_contents(base_path('.local/browser-check-in-fixture.json'), json_encode($checkInFixtures, JSON_THROW_ON_ERROR));

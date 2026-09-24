@@ -22,7 +22,13 @@ type Row = {
     reservation_status: string;
     attendance: Mark | null;
 };
-type Qr = { token: string; expires_at: string; refresh_after: number };
+type Qr = {
+    token: string;
+    payload: string;
+    expires_at: string;
+    server_time: string;
+    refresh_after: number;
+};
 
 export function AttendanceToday({
     organization,
@@ -110,6 +116,7 @@ function RotatingQr({ base }: { base: string }) {
         let expiry: ReturnType<typeof setTimeout>;
         async function load() {
             try {
+                const requested = performance.now();
                 const r = await api.post<{ data: Qr }>(
                     `${base}/qr`,
                     {},
@@ -121,7 +128,12 @@ function RotatingQr({ base }: { base: string }) {
                 clearTimeout(expiry);
                 expiry = setTimeout(
                     () => setQr(null),
-                    Math.max(0, Date.parse(r.data.expires_at) - Date.now()),
+                    Math.max(
+                        0,
+                        Date.parse(r.data.expires_at) -
+                            Date.parse(r.data.server_time) -
+                            (performance.now() - requested),
+                    ),
                 );
                 refresh = setTimeout(
                     () => void load(),
@@ -147,7 +159,7 @@ function RotatingQr({ base }: { base: string }) {
             {qr ? (
                 <>
                     <QRCodeSVG
-                        value={`gt-checkin:${qr.token}`}
+                        value={qr.payload}
                         size={280}
                         marginSize={4}
                         title={t('showQr')}
@@ -196,12 +208,34 @@ export function AttendanceRoster({
     useEffect(() => {
         if (!allowed) return;
         const c = new AbortController();
-        api.get<Page<Row>>(`${base}?page=${page}`, c.signal)
-            .then(setResult)
-            .catch((e: unknown) => {
-                if (!c.signal.aborted) setError(errorMessage(e));
-            });
-        return () => c.abort();
+        let timer: ReturnType<typeof setTimeout>;
+        async function load() {
+            try {
+                if (document.visibilityState !== 'hidden') {
+                    const data = await api.get<Page<Row>>(
+                        `${base}?page=${page}`,
+                        c.signal,
+                    );
+                    if (!c.signal.aborted) {
+                        setResult(data);
+                        setError('');
+                    }
+                }
+            } catch (e) {
+                if (!c.signal.aborted) {
+                    setError(errorMessage(e));
+                    setResult(null);
+                }
+            } finally {
+                if (!c.signal.aborted)
+                    timer = setTimeout(() => void load(), 10000);
+            }
+        }
+        void load();
+        return () => {
+            c.abort();
+            clearTimeout(timer);
+        };
     }, [allowed, base, page, revision]);
     async function write(path: string, data: unknown) {
         setBusy(true);
@@ -269,6 +303,8 @@ export function AttendanceRoster({
                                         {t(
                                             `reservationStatus_${row.reservation_status}`,
                                         )}
+                                        {row.attendance?.method === 'qr' &&
+                                            ` · ${t('qrMethod')}`}
                                         {row.attendance?.checked_in_at &&
                                             ` · ${new Date(row.attendance.checked_in_at).toLocaleTimeString(organization.locale, { timeZone: session.timezone })}`}
                                     </p>

@@ -44,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
             return [Limit::perMinute(30)->by('ip:'.$request->ip()), Limit::perMinute(5)->by('account:'.$key)];
         });
         RateLimiter::for('activation', fn (Request $request) => [Limit::perMinute(10)->by('ip:'.$request->ip()), Limit::perMinute(5)->by('invite:'.hash('sha256', is_string($request->input('token')) ? $request->input('token') : ''))]);
+        RateLimiter::for('member-check-in', fn (Request $request) => [Limit::perMinute(20)->by('member:'.(string) $request->user()?->getAuthIdentifier()), Limit::perMinute(300)->by('ip:'.$request->ip())]);
+        RateLimiter::for('attendance-qr', fn (Request $request) => Limit::perMinute(12)->by((string) $request->user()?->getAuthIdentifier()));
         RateLimiter::for('member-write', fn (Request $request) => Limit::perMinute(30)->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
         RateLimiter::for('password', fn (Request $request) => Limit::perMinute(5)->by((string) $request->ip()));
         ResetPassword::createUrlUsing(fn (User $user, string $token): string => rtrim(config('app.url'), '/').'/reset-password#'.http_build_query(['token' => $token, 'email' => $user->email]));

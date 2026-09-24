@@ -9,7 +9,10 @@ export type ErrorKind =
     | 'limited'
     | 'server';
 export class ApiError extends Error {
-    constructor(public readonly kind: ErrorKind) {
+    constructor(
+        public readonly kind: ErrorKind,
+        public readonly code?: string,
+    ) {
         super(kind);
     }
 }
@@ -99,7 +102,35 @@ export class ApiClient {
                     )[response.status] ?? 'server';
                 if (kind === 'expired' || kind === 'forbidden')
                     this.onDenied(kind, token);
-                throw new ApiError(kind);
+                let code: string | undefined;
+                if (kind === 'conflict') {
+                    const payload: unknown = await response
+                        .json()
+                        .catch(() => null);
+                    const candidate =
+                        payload &&
+                        typeof payload === 'object' &&
+                        'code' in payload
+                            ? payload.code
+                            : null;
+                    if (
+                        typeof candidate === 'string' &&
+                        [
+                            'qr_invalid',
+                            'qr_expired',
+                            'too_early',
+                            'too_late',
+                            'waiting',
+                            'reservation_required',
+                            'cancelled',
+                            'unavailable',
+                            'member_ineligible',
+                            'correction_required',
+                        ].includes(candidate)
+                    )
+                        code = candidate;
+                }
+                throw new ApiError(kind, code);
             }
             return response.status === 204
                 ? (undefined as T)

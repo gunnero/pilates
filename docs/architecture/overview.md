@@ -35,3 +35,7 @@ GT-011 adds optional account activation and member self-service using the same g
 ## GT-012 native member application
 
 `apps/mobile` now implements the documented Expo/React Native direction, using the GT-011 member API and GT-010 inbox. A pnpm workspace preserves independent compatible web/native React versions. The server owns identity, allocation and all history; native state is a bounded account/studio-scoped memory cache and a platform-secured bearer. No backend schema, permissions or domain writers changed. See [mobile architecture and operations](../mobile/overview.md).
+
+## GT-013 member attendance boundary
+
+Authenticated QR redemption resolves `MemberContext` under the organization lock, then uses GT-008 session locking and attendance writes. It never enters reservation allocation or waiting promotion. The native app treats camera data as untrusted, and trainer web display/roster reuse staff permission and location/trainer scope. There is no new persistence. See [secure check-in](../domain/secure-check-in.md) for API, crypto, expiry, privacy, audit, operating limits and failure semantics.

@@ -8,8 +8,9 @@ use App\Models\Reservation;
 use App\Models\StudioMember;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Models\WaitingListEntry;
 use App\Support\Notifications\Events;
-use Illuminate\Support\Facades\DB;
+use App\Support\SelfService\MemberContext;
 use Illuminate\Support\Facades\Gate;
 
 final class Attendance
@@ -75,20 +76,25 @@ final class Attendance
         return $a;
     }
 
-    /** Future adapter must pass its authenticated User, never a request-supplied member. No HTTP endpoint yet. */
-    public static function selfCheckIn(User $authenticatedUser, string $organization, string $session, ?string $qr = null): AttendanceRecord
+    /** Authenticated member adapter; identity and authority are re-resolved under the organization lock. */
+    public static function selfCheckIn(User $authenticatedUser, string $organization, string $session, ?string $qr = null, bool $detailed = false): AttendanceRecord
     {
-        return DB::transaction(function () use ($authenticatedUser, $organization, $session, $qr) {
-            $o = Organization::query()->where('public_id', $organization)->where('status', 'active')->lockForUpdate()->firstOrFail();
-            $m = StudioMember::query()->where('organization_id', $o->id)->where('user_id', $authenticatedUser->id)->where('status', 'active')->sole();
-            $s = Allocation::lock(TrainingSession::query()->where('organization_id', $o->id)->where('public_id', $session)->firstOrFail());
-            AttendancePolicy::memberWindow($s);
+        return MemberContext::mutate($authenticatedUser, $organization, function (MemberContext $context) use ($session, $qr, $detailed) {
+            $m = $context->member;
+            $s = Allocation::lock(TrainingSession::query()->where('organization_id', $context->organization->id)->where('public_id', $session)->firstOrFail());
+            AttendancePolicy::memberWindow($s, $detailed);
             if ($qr !== null) {
-                AttendanceQr::validate($s, $qr);
+                AttendanceQr::validate($s, $qr, $detailed);
+            }
+            if ($detailed && ! Reservation::where('training_session_id', $s->id)->where('studio_member_id', $m->id)->where('status', 'active')->exists()) {
+                if (WaitingListEntry::where('training_session_id', $s->id)->where('studio_member_id', $m->id)->where('status', 'waiting')->exists()) {
+                    throw new AttendanceConflict('waiting');
+                }
+                throw new AttendanceConflict('reservation_required');
             }
 
-            return self::write($s, self::activeReservation($s, $m), 'present', $qr === null ? 'member' : 'qr', $authenticatedUser);
-        }, 3);
+            return self::write($s, self::activeReservation($s, $m), 'present', $qr === null ? 'member' : 'qr', $context->user);
+        });
     }
 
     /** Caller holds organization lock. Skips resolved rows; finalization never corrects a check-in. */

@@ -1,6 +1,11 @@
 <?php
 
-return ['cancelled' => 'Cancelled sessions cannot accept attendance.',
+return [
+    'qr_expired' => 'This QR has expired. Scan the current display.',
+    'too_early' => 'Check-in is not open yet.',
+    'too_late' => 'Check-in has closed. Ask your trainer.',
+    'waiting' => 'You are on the waiting list and cannot check in.',
+    'cancelled' => 'Cancelled sessions cannot accept attendance.',
     'unavailable' => 'Session is operationally unavailable.',
     'window' => 'Outside the check-in window. After the session, use an authorized correction.',
     'not_ended' => 'Absence and no-show can only be recorded after the session ends.',

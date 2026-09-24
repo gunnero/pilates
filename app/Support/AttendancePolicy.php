@@ -22,11 +22,14 @@ final class AttendancePolicy
         }
     }
 
-    public static function memberWindow(TrainingSession $s): void
+    public static function memberWindow(TrainingSession $s, bool $detailed = false): void
     {
         self::operational($s);
-        if (now()->lt($s->starts_at->subMinutes(self::EARLY_MINUTES)) || now()->gt($s->starts_at->addMinutes(self::MEMBER_LATE_MINUTES)) || now()->gte($s->ends_at)) {
-            throw new AttendanceConflict('window');
+        if (now()->lt($s->starts_at->subMinutes(self::EARLY_MINUTES))) {
+            throw new AttendanceConflict($detailed ? 'too_early' : 'window');
+        }
+        if (($detailed ? now()->gte($s->starts_at->addMinutes(self::MEMBER_LATE_MINUTES)) : now()->gt($s->starts_at->addMinutes(self::MEMBER_LATE_MINUTES))) || now()->gte($s->ends_at)) {
+            throw new AttendanceConflict($detailed ? 'too_late' : 'window');
         }
     }
 

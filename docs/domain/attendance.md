@@ -49,3 +49,7 @@ Indexes cover tenant/session/status and tenant/member/status/created_at for futu
 ## Limits
 
 Organization-wide serialization favors correctness over peak write throughput. Staff check-in/correction policy is currently fixed, with no configuration UI. Absent/no-show are final after end; there is no before-end absent correction or undo-to-unmarked endpoint. Sessions with attendance cannot be cancelled or rescheduled. Future exceptional studio cancellation needs an explicit audited history model. No payments, packages, notifications, GPS, advanced dashboards, member app or GT-009 work is included.
+
+## GT-013 secure member check-in
+
+The previously deferred member HTTP/camera integration is implemented. See [secure check-in contract](secure-check-in.md) for the mandatory authenticated QR endpoint, shared rotating credential, half-open server window, current eligibility checks, mobile scanner, live roster and fallback. Existing GT-008 records, corrections, no-show, walk-in, capacity and audit rules remain authoritative. No schema change or additional attendance domain was added.

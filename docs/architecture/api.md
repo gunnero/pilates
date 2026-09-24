@@ -143,3 +143,7 @@ GT-011 versioned account/member API endpoints, pagination, field allowlists, tim
 ## GT-012 mobile consumption
 
 GT-012 adds no production endpoint. The Expo app uses the GT-011 member routes and existing recipient notification routes with bearer authentication, bounded 25-row pages, a 15-second timeout, no cookie transport and no automatic mutation replay. Device registration is intentionally disabled until a provider/backend boundary is implemented and reviewed. See [mobile contracts](../mobile/overview.md).
+
+## GT-013
+
+`POST /api/v1/member/organizations/{organization}/sessions/{session}/check-in` requires authenticated member authority and `{credential}` only. Staff issuance remains `POST /api/v1/organizations/{organization}/sessions/{session}/attendance/qr`; roster refresh uses the existing paginated attendance GET. Own attendance history includes `method`. Explicit response fields, finite errors, limits and privacy are specified in [secure check-in](../domain/secure-check-in.md).

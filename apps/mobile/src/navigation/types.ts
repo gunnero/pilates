@@ -1,4 +1,5 @@
 export type Routes = {
+    CheckIn: undefined;
     Home: undefined;
     Sessions: { group?: string; relationship?: 'all' | 'reserved' } | undefined;
     Groups: undefined;

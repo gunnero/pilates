@@ -1,4 +1,38 @@
 export const en = {
+    checkIn: 'Scan to check in',
+    cameraWhy:
+        'Point your camera at the trainer’s current QR code. No photos or video are saved. Attendance is confirmed by the studio server.',
+    cameraEnable: 'Enable camera',
+    cameraFallback:
+        'Camera unavailable or access denied? Ask your trainer to check you in manually.',
+    scanAgain: 'Scan again',
+    scanInvalid: 'This is not a supported studio check-in QR code.',
+    scanWrongStudio:
+        'This QR belongs to another studio. Switch studio before scanning.',
+    scanSuccess: 'Attendance confirmed',
+    scanDuplicate: 'You are already checked in',
+    scanVerify: 'Checking attendance with the studio…',
+    scanUncertain:
+        'The request may have succeeded. Open the session to verify your attendance before scanning again.',
+    scanSession: 'View session attendance',
+    qrMethod: 'Checked in by QR',
+    qr_invalid:
+        'The QR is invalid. Scan the current code shown by your trainer.',
+    qr_expired: 'This QR has expired. Scan the current code.',
+    too_early: 'Check-in opens 30 minutes before the session.',
+    too_late: 'The check-in window has closed. Ask your trainer for help.',
+    waitingQr:
+        'You are on the waiting list. QR check-in requires an active reservation.',
+    reservation_required:
+        'An active reservation is required. Ask your trainer for help.',
+    cancelledQr: 'This session is cancelled.',
+    unavailableQr:
+        'This session is unavailable for check-in. Ask your trainer.',
+    member_ineligible:
+        'Your membership access is inactive. Ask the studio for help.',
+    correction_required:
+        'Attendance is already recorded with another status. Ask your trainer to correct it.',
+
     app: 'GT Studio',
     home: 'Home',
     sessions: 'Sessions',
@@ -139,6 +173,40 @@ export const en = {
 };
 export type TextKey = keyof typeof en;
 export const mk: Record<TextKey, string> = {
+    checkIn: 'Скенирај за присуство',
+    cameraWhy:
+        'Насочете ја камерата кон тековниот QR код кај тренерот. Не се зачувуваат фотографии или видео. Присуството го потврдува серверот на студиото.',
+    cameraEnable: 'Овозможи камера',
+    cameraFallback:
+        'Камерата не е достапна или пристапот е одбиен? Побарајте тренерот рачно да ве пријави.',
+    scanAgain: 'Скенирај повторно',
+    scanInvalid: 'Ова не е поддржан QR код за пријавување присуство.',
+    scanWrongStudio:
+        'Овој QR е за друго студио. Променете го студиото пред скенирање.',
+    scanSuccess: 'Присуството е потврдено',
+    scanDuplicate: 'Веќе сте пријавени',
+    scanVerify: 'Се проверува присуството со студиото…',
+    scanUncertain:
+        'Барањето можеби успеало. Отворете го терминот за да го проверите присуството пред повторно скенирање.',
+    scanSession: 'Провери присуство во терминот',
+    qrMethod: 'Пријавено со QR',
+    qr_invalid:
+        'QR кодот не е валиден. Скенирајте го тековниот код кај тренерот.',
+    qr_expired: 'QR кодот е истечен. Скенирајте го тековниот код.',
+    too_early: 'Пријавувањето се отвора 30 минути пред терминот.',
+    too_late: 'Пријавувањето е затворено. Побарајте помош од тренерот.',
+    waitingQr:
+        'На листата за чекање сте. За QR пријавување е потребна активна резервација.',
+    reservation_required:
+        'Потребна е активна резервација. Побарајте помош од тренерот.',
+    cancelledQr: 'Терминот е откажан.',
+    unavailableQr:
+        'Терминот не е достапен за пријавување. Побарајте помош од тренерот.',
+    member_ineligible:
+        'Вашиот пристап е неактивен. Побарајте помош од студиото.',
+    correction_required:
+        'Присуството е веќе запишано со друг статус. Побарајте исправка од тренерот.',
+
     app: 'ГТ Студио',
     home: 'Почетна',
     sessions: 'Термини',

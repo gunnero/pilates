@@ -323,7 +323,7 @@
     "attendanceSearch": "Find member for walk-in",
     "showQr": "Show check-in QR",
     "hideQr": "Hide QR",
-    "qrHint": "Member sign-in is required. Mobile scanning will be available in a future release.",
+    "qrHint": "Member sign-in is required. Scan with the GT member app. The code rotates automatically. Ask the trainer for manual check-in if needed.",
     "qrExpires": "Expires at {{time}}",
     "attendanceSaved": "Attendance saved",
     "noRoster": "No reservations or attendance yet.",
@@ -483,5 +483,6 @@
             "ended": "Ended",
             "skipped": "Skipped"
         }
-    }
+    },
+    "qrMethod": "QR check-in"
 }

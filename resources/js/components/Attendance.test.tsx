@@ -1,5 +1,11 @@
-import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AttendanceRoster, AttendanceToday } from './Attendance';
@@ -164,6 +170,8 @@ it('shows locally rendered expiring QR without a member endpoint', async () => {
     vi.mocked(api.post).mockResolvedValue({
         data: {
             token: 'opaque-test-value',
+            payload: 'GTQR1:opaque-test-envelope',
+            server_time: new Date().toISOString(),
             expires_at: new Date(Date.now() + 90000).toISOString(),
             refresh_after: 60,
         },
@@ -219,4 +227,54 @@ it('renders empty roster', async () => {
     expect(
         await screen.findByText('No reservations or attendance yet.'),
     ).toBeVisible();
+});
+
+afterEach(() => vi.useRealTimers());
+it('polls a bounded roster and reflects server attendance without reload', async () => {
+    vi.useFakeTimers();
+    render(<AttendanceRoster organization={org} session={session} />);
+    await act(async () => {});
+    expect(api.get).toHaveBeenCalledTimes(1);
+    vi.mocked(api.get).mockResolvedValue({
+        data: [
+            {
+                ...row,
+                attendance: {
+                    id: 'a',
+                    status: 'present',
+                    method: 'qr',
+                    checked_in_at: '2026-09-22T16:00:00Z',
+                },
+            },
+        ],
+        meta,
+    });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(10000);
+    });
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(screen.getByText(/Present.*QR/)).toBeVisible();
+});
+it('rotates QR and removes it after renewal failure', async () => {
+    vi.useFakeTimers();
+    vi.mocked(api.post).mockResolvedValue({
+        data: {
+            token: 'test',
+            payload: 'GTQR1:envelope',
+            server_time: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 90000).toISOString(),
+            refresh_after: 30,
+        },
+    });
+    render(<AttendanceRoster organization={org} session={session} />);
+    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: 'Show check-in QR' }));
+    await act(async () => {});
+    expect(document.querySelector('svg')).not.toBeNull();
+    vi.mocked(api.post).mockRejectedValue(new ApiError(409, 'Expired'));
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(30000);
+    });
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect(document.querySelector('svg')).toBeNull();
 });
