@@ -3,6 +3,7 @@
 use App\Http\Middleware\Locale;
 use App\Http\Middleware\SecurityHeaders;
 use App\Support\AttendanceConflict;
+use App\Support\FinanceConflict;
 use App\Support\ReservationConflict;
 use App\Support\SessionConflict;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Framework exception messages can contain submitted values or SQL. Public errors are bounded.
         $exceptions->respond(function (Response $response, Throwable $exception): Response {
             if (request()->is('api/*', 'auth/*') && $response->getStatusCode() >= 400 && $response->getStatusCode() !== 422) {
+                if ($exception instanceof FinanceConflict) {
+                    return response()->json(['message' => __('finance.'.$exception->reason), 'code' => $exception->reason], 409);
+                }
                 if ($exception instanceof AttendanceConflict) {
                     return response()->json(['message' => __('attendance.'.$exception->reason), 'code' => $exception->reason], 409);
                 }

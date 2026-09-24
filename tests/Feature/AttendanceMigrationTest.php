@@ -18,7 +18,7 @@ class AttendanceMigrationTest extends TestCase
     public function test_populated_gt007_upgrade_preserves_records_and_grants(): void
     {
         [$o,$u,$a,$l,$t,$g] = $this->sessionFixture();
-        $a->permissions = array_values(array_diff($a->permissions, ['attendance.manage', 'attendance.correct']));
+        $a->permissions = array_values(array_diff($a->permissions, ['memberships.view', 'memberships.manage', 'attendance.manage', 'attendance.correct']));
         $a->save();
         $g->capacity = 1;
         $g->save();
@@ -33,7 +33,7 @@ class AttendanceMigrationTest extends TestCase
                 $this->postJson($this->base($o)."/sessions/$s->public_id/reservations", ['member_id' => $m->public_id, 'allow_waiting' => true])->assertOk();
             }
         }
-        Artisan::call('migrate:rollback', ['--step' => 1, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
         $tables = ['users', 'organizations', 'locations', 'organization_memberships', 'membership_locations', 'studio_members', 'trainer_profiles', 'training_groups', 'schedule_rules', 'training_sessions', 'reservations', 'waiting_list_entries', 'permanent_spots', 'permanent_spot_releases', 'audit_events'];
         $before = [];
         foreach ($tables as $table) {

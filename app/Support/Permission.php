@@ -35,6 +35,8 @@ enum Permission: string
     case MembersStatusManage = 'members.status.manage';
     case MembersNotesView = 'members.notes.view';
     case MembersNotesManage = 'members.notes.manage';
+    case MembershipsView = 'memberships.view';
+    case MembershipsManage = 'memberships.manage';
     case AttendanceManage = 'attendance.manage';
     case AttendanceCorrect = 'attendance.correct';
     case AttendanceView = 'attendance.view';

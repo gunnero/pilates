@@ -69,3 +69,7 @@ Read [system overview](docs/architecture/overview.md), [tenant strategy](docs/ar
 ## GT-008 attendance extension
 
 GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](docs/domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.
+
+## GT-009 memberships and cash
+
+[Domain, API and permission contracts](docs/domain/cash-payments.md) cover duration plans, immutable sold periods, partial cash payments, full reversals and responsive membership workflows. No existing staff grants are expanded during migration. Trusted adoption: `php artisan gt:finance-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason="Approved adoption"`. Read-only consistency: `php artisan gt:finance:check`. Do not use financial membership state to infer reservation/attendance eligibility.

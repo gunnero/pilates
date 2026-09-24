@@ -23,3 +23,7 @@ The current catalog contains 29 capabilities. sessions.view/manage/cancel are in
 ## GT-008 attendance extension
 
 GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](../domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.
+
+## GT-009 financial authority
+
+Financial grants are explicit organization-wide powers, even for selected-location staff. memberships.view provides redacted commercial-period metadata; payments.view gates all money/history; record/correct remain separate and also require view. reports.view plus payments.view gates metrics. No trainer-profile, attendance or location-scope inference grants finance. Existing grants are preserved; adoption is opt-in. See [full permission matrix](../domain/cash-payments.md#authority-and-privacy).

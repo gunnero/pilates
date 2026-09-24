@@ -11,6 +11,7 @@ import { api, ApiError, type Organization, type Profile } from '../lib/api';
 import { OrganizationSettings } from './OrganizationSettings';
 import { Locations } from './Locations';
 import { Staff } from './Staff';
+import { Finance } from './Finance';
 import { Members } from './Members';
 import { Trainers } from './Trainers';
 import { Groups } from './Groups';
@@ -23,6 +24,7 @@ const sections = [
     'groups',
     'schedule',
     'attendance',
+    'memberships',
     'payments',
     'trainers',
     'reports',
@@ -181,6 +183,8 @@ export function StudioShell() {
                                     'groups',
                                     'schedule',
                                     'attendance',
+                                    'memberships',
+                                    'payments',
                                 ].includes(item) && (
                                     <span
                                         className="nav-dot"
@@ -264,6 +268,17 @@ export function StudioShell() {
                         </div>
                     ) : !ready || switching ? (
                         <p role="status">{t('loading')}</p>
+                    ) : section === 'memberships' || section === 'payments' ? (
+                        organization.permissions.some((p) =>
+                            ['memberships.view', 'payments.view'].includes(p),
+                        ) ? (
+                            <Finance
+                                key={organization.id}
+                                organization={organization}
+                            />
+                        ) : (
+                            <p>{t('accessDenied')}</p>
+                        )
                     ) : section === 'settings' ? (
                         <OrganizationSettings
                             key={organization.id}

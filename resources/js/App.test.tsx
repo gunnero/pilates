@@ -88,6 +88,7 @@ describe('studio foundation', () => {
                           locale: 'mk',
                           timezone: 'Europe/Skopje',
                           currency: 'MKD',
+                          permissions: [],
                       },
                   },
         );
@@ -99,7 +100,9 @@ describe('studio foundation', () => {
         ).toBeInTheDocument();
         await userEvent.click(screen.getByRole('link', { name: /Плаќања/ }));
         expect(
-            await screen.findByText('Овој дел сè уште не е достапен.'),
+            await screen.findByText(
+                'Немате пристап до работниот простор на ова студио.',
+            ),
         ).toBeInTheDocument();
         expect(screen.queryByText(/MKD/)).not.toBeInTheDocument();
     });

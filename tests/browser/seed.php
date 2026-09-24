@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Location;
+use App\Models\MembershipPlan;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\ScheduleRule;
@@ -121,4 +122,15 @@ foreach (['desktop', 'mobile'] as $viewport) {
             });
         }
     }
+}
+
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Finance studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Finance owner', 'email' => 'finance-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $client = new StudioMember;
+    $client->forceFill(['organization_id' => $org->id, 'first_name' => 'Finance', 'last_name' => 'Client', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
+    $plan = new MembershipPlan;
+    $plan->forceFill(['organization_id' => $org->id, 'name' => 'Monthly cash', 'price_minor' => 150000, 'currency' => 'MKD', 'duration_unit' => 'months', 'duration_count' => 1, 'status' => 'active'])->save();
 }

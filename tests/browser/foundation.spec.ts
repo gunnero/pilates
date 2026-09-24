@@ -395,7 +395,7 @@ test('real session authentication, CSRF, localization and responsive shell', asy
         await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('link', { name: /Payments/ }).click();
     await expect(
-        page.getByText('This section is not available yet.'),
+        page.getByRole('heading', { name: 'Memberships', exact: true }),
     ).toBeVisible();
     expect(
         await page.evaluate(

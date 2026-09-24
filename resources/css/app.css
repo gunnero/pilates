@@ -754,3 +754,46 @@ h2 {
     max-width: 100%;
     height: auto;
 }
+
+.finance {
+    margin-block: 1.5rem;
+}
+.finance-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: 1rem;
+    margin-block: 1rem;
+}
+.finance-card,
+.finance-detail {
+    padding: 1rem;
+    border: 1px solid #d9ded9;
+    border-radius: 0.75rem;
+    margin-block: 0.75rem;
+    overflow-wrap: anywhere;
+}
+.finance-detail {
+    background: #f7faf6;
+}
+.finance label {
+    display: grid;
+    gap: 0.35rem;
+    margin-block: 0.75rem;
+}
+.finance input,
+.finance select,
+.finance textarea {
+    width: 100%;
+    min-width: 0;
+}
+.finance button {
+    margin: 0.25rem;
+}
+.finance dl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem;
+}
+.finance dd {
+    margin: 0;
+}

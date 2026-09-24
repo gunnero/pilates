@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberBookingsController;
 use App\Http\Controllers\OrganizationContextController;
@@ -29,6 +30,23 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
             Route::post('/member-lookup', [AttendanceController::class, 'lookup'])->middleware(['can:attendance.manage', 'can:reservations.view', 'can:reservations.manage']);
             Route::post('/qr', [AttendanceController::class, 'qr'])->middleware('can:attendance.manage');
         });
+        Route::get('/finance/metrics', [FinanceController::class, 'metrics']);
+        Route::get('/membership-plans', [FinanceController::class, 'plans']);
+        Route::post('/membership-plans', [FinanceController::class, 'savePlan'])->middleware(['can:memberships.manage', 'can:memberships.view', 'can:payments.view']);
+        Route::get('/membership-plans/{plan}', [FinanceController::class, 'plan'])->whereUuid('plan');
+        Route::patch('/membership-plans/{plan}', [FinanceController::class, 'savePlan'])->whereUuid('plan')->middleware(['can:memberships.manage', 'can:memberships.view', 'can:payments.view']);
+        Route::post('/membership-plans/{plan}/preview', [FinanceController::class, 'preview'])->whereUuid('plan');
+        Route::get('/memberships', [FinanceController::class, 'memberships']);
+        Route::post('/memberships', [FinanceController::class, 'assign'])->middleware(['can:memberships.view', 'can:memberships.manage']);
+        Route::get('/memberships/{membership}', [FinanceController::class, 'membership'])->whereUuid('membership');
+        Route::post('/memberships/{membership}/cancel', [FinanceController::class, 'cancel'])->whereUuid('membership')->middleware(['can:memberships.view', 'can:memberships.manage']);
+        Route::get('/members/{member}/memberships', [FinanceController::class, 'memberships'])->whereUuid('member');
+        Route::get('/finance/members/{member}', [FinanceController::class, 'memberships'])->whereUuid('member')->middleware('can:payments.view');
+        Route::post('/finance/member-lookup', [FinanceController::class, 'lookup']);
+        Route::get('/cash-payments', [FinanceController::class, 'payments'])->middleware('can:payments.view');
+        Route::post('/cash-payments', [FinanceController::class, 'pay'])->middleware(['can:payments.view', 'can:payments.record']);
+        Route::get('/cash-payments/{payment}', [FinanceController::class, 'payment'])->whereUuid('payment')->middleware('can:payments.view');
+        Route::post('/cash-payments/{payment}/reverse', [FinanceController::class, 'reverse'])->whereUuid('payment')->name('cash.reverse')->middleware(['can:payments.view', 'can:payments.correct']);
         Route::get('/context', OrganizationContextController::class);
         Route::post('/switch', [OrganizationController::class, 'switch']);
         Route::get('/', [OrganizationController::class, 'show'])->middleware('can:organizations.view');

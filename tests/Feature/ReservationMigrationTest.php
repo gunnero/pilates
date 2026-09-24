@@ -18,10 +18,10 @@ class ReservationMigrationTest extends TestCase
         [$org,$user,$access,,$trainer,$g] = $this->sessionFixture();
         // Prepare sessions while the current runtime can access its schema, then roll back only GT-007.
         SessionMaterializer::run($org->id, $g->public_id);
-        $access->permissions = array_values(array_filter($access->permissions, fn ($p) => ! in_array($p, ['attendance.manage', 'attendance.correct'], true) && ! str_starts_with($p, 'reservations.') && ! str_starts_with($p, 'waiting_list.') && ! str_starts_with($p, 'permanent_spots.')));
+        $access->permissions = array_values(array_filter($access->permissions, fn ($p) => ! in_array($p, ['memberships.view', 'memberships.manage', 'attendance.manage', 'attendance.correct'], true) && ! str_starts_with($p, 'reservations.') && ! str_starts_with($p, 'waiting_list.') && ! str_starts_with($p, 'permanent_spots.')));
         $access->save();
         $this->postJson($this->base($org).'/members', ['first_name' => 'Offline', 'last_name' => 'Fixture'])->assertCreated();
-        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 3, '--force' => true]);
         $tables = ['users', 'organizations', 'locations', 'organization_memberships', 'membership_locations', 'studio_members', 'trainer_profiles', 'training_groups', 'schedule_rules', 'training_sessions', 'audit_events'];
         $before = [];
         foreach ($tables as $t) {

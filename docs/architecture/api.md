@@ -127,3 +127,7 @@ Organization timezone edits return 409 once schedule history exists, preserving 
 ## GT-008 attendance extension
 
 GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](../domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.
+
+## GT-009 finance API
+
+Membership plans, concrete memberships, financial member summaries and append-only cash/reversal endpoints are implemented under the organization prefix. See [endpoint and serialization contract](../domain/cash-payments.md#api-and-query-foundation). Read grants are checked before queries/serialization; monetary fields require payments.view. Mutations reject unknown keys and reauthorize under the common lock.

@@ -34,3 +34,7 @@ Subjects training_group and schedule_rule use their retained public UUIDs. Group
 ## GT-006 session evidence
 
 Manual creation/override events contain bounded before/after public assignment references and time/capacity, never names or cancellation prose. Cancellation records reason presence. Generation produces one aggregate event per group transaction that actually creates occurrences; retries with no creates add no noise. Rule reconciliation records counts with source rule evidence. Every event shares the organization transaction and fails closed on insert failure.
+
+## GT-009 cash evidence
+
+Plan changes, membership assignment/cancellation, cash recording/reversal and explicit permission adoption write evidence transactionally. Payloads contain public IDs, bounded reason codes and necessary commercial amounts/time, not client contact details, names, descriptions or notes. SQL audit immutability remains unchanged. Cash/reversal history is separately append-only. Organization financial reports require payments.view and reports.view.
