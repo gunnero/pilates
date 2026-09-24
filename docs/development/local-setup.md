@@ -91,3 +91,7 @@ This trusted adoption adds group/schedule view/manage only to an active all-loca
 ## GT-006 sessions
 
 Existing grants are unchanged. Explicitly adopt an active all-location owner/admin with `php artisan gt:session-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason='GT-006 adoption'`. No sessions are seeded. Run `php artisan gt:sessions:materialize` (optionally `--organization=UUID`) to prepare the next 56 inclusive local dates; reruns preserve existing and cancelled occurrences. Output contains identifiers/counts/reason codes only; exit 1 signals any skipped invalid/DST/conflict/limit work or failed group. Each group is atomic; other groups continue. No host cron, queue or shared Redis configuration is installed. A future scheduler can invoke this idempotent command regularly. See [session behavior and limits](../domain/training-sessions.md).
+
+## GT-010 notifications
+
+GT-010 operational commands and scheduler allowlist are documented in [notifications](../domain/notifications.md#database-and-operational-contract). Delivery polls durable PostgreSQL rows; no new Redis or external service is required. Enable only intended tenant UUIDs for scheduled generation. Do not log payloads or exception contents.

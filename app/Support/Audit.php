@@ -11,15 +11,18 @@ use LogicException;
 final class Audit
 {
     /** @param array<string, mixed> $metadata */
-    public static function record(Organization $organization, ?User $actor, string $action, string $subjectType, string $subjectId, array $metadata): void
+    public static function record(Organization $organization, ?User $actor, string $action, string $subjectType, string $subjectId, array $metadata): string
     {
         if (DB::transactionLevel() < 1) {
             throw new LogicException('Audit requires an enclosing transaction.');
         }
+        $eventId = (string) Str::uuid7();
         DB::table('audit_events')->insert([
-            'public_id' => (string) Str::uuid7(), 'organization_id' => $organization->id, 'actor_id' => $actor?->id,
+            'public_id' => $eventId, 'organization_id' => $organization->id, 'actor_id' => $actor?->id,
             'action' => $action, 'subject_type' => $subjectType, 'subject_id' => $subjectId,
             'occurred_at' => now(), 'metadata' => json_encode((object) $metadata, JSON_THROW_ON_ERROR),
         ]);
+
+        return $eventId;
     }
 }

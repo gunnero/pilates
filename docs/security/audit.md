@@ -38,3 +38,7 @@ Manual creation/override events contain bounded before/after public assignment r
 ## GT-009 cash evidence
 
 Plan changes, membership assignment/cancellation, cash recording/reversal and explicit permission adoption write evidence transactionally. Payloads contain public IDs, bounded reason codes and necessary commercial amounts/time, not client contact details, names, descriptions or notes. SQL audit immutability remains unchanged. Cash/reversal history is separately append-only. Organization financial reports require payments.view and reports.view.
+
+## GT-010 notifications
+
+GT-010 uses immutable notification evidence plus bounded attempt history. Preference changes and delivery retries/failures use audit actions notification.preferences_changed, notification.delivery_retry and notification.delivery_failed. Audit metadata contains booleans, attempt/channel/error codes; no notification contents. Ordinary reads do not add audit noise. Domain event UUIDs version repeatable notifications.

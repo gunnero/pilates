@@ -401,5 +401,18 @@
         "member_request": "Client request"
     },
     "permission_memberships_view": "View memberships",
-    "permission_memberships_manage": "Manage memberships"
+    "permission_memberships_manage": "Manage memberships",
+    "notifications": "Notifications",
+    "notificationUnreadOnly": "Unread only",
+    "notificationUnreadCount": "Unread: {{count}}",
+    "notificationReadPage": "Mark this page read",
+    "notificationEmpty": "No notifications.",
+    "notificationUnread": "Unread",
+    "notificationHistorical": "This message describes an earlier state.",
+    "notificationMarkRead": "Mark read",
+    "notificationPages": "Inbox pages",
+    "notificationPreferences": "Notification preferences",
+    "notificationReminders": "Session reminders",
+    "notificationExpiry": "Membership expiry reminders",
+    "notificationRequired": "Important transactional notifications remain enabled."
 }

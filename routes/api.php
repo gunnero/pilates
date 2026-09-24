@@ -4,6 +4,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberBookingsController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationContextController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermanentSpotController;
@@ -20,6 +21,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::get('/me', ProfileController::class);
+    Route::get('/notification-contexts', [NotificationController::class, 'contexts']);
+    Route::prefix('organizations/{organization}/notifications')->whereUuid('organization')->group(function (): void {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/preferences', [NotificationController::class, 'preferences']);
+        Route::patch('/preferences', [NotificationController::class, 'savePreferences']);
+        Route::post('/read', [NotificationController::class, 'read']);
+        Route::get('/{notification}', [NotificationController::class, 'show'])->whereUuid('notification');
+        Route::post('/{notification}/read', [NotificationController::class, 'read'])->whereUuid('notification');
+    });
     Route::prefix('organizations/{organization}')->whereUuid('organization')->middleware([ResolveOrganization::class, 'can:studio.access'])->group(function (): void {
         Route::get('/attendance/today', [AttendanceController::class, 'today'])->middleware(['can:attendance.view', 'can:sessions.view']);
         Route::prefix('sessions/{session}/attendance')->whereUuid('session')->middleware(['can:attendance.view', 'can:sessions.view'])->group(function (): void {

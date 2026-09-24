@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { Notifications } from './components/Notifications';
 import { AuthForm } from './components/AuthForm';
 import { StudioShell } from './components/StudioShell';
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
                 path="/reset-password"
                 element={<AuthForm key="reset" mode="reset" />}
             />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="*" element={<StudioShell />} />
         </Routes>
     );

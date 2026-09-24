@@ -797,3 +797,31 @@ h2 {
 .finance dd {
     margin: 0;
 }
+
+.notification-list {
+    list-style: none;
+    padding: 0;
+    max-width: 52rem;
+}
+.notification-list article {
+    border: 1px solid var(--line, #dce3dc);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-block: 1rem;
+    overflow-wrap: anywhere;
+}
+.notification-list h2 {
+    font-size: 1.1rem;
+}
+.notification-inbox > label,
+.notification-inbox fieldset label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block: 0.75rem;
+}
+.notification-inbox input[type='checkbox'] {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+}

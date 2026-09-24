@@ -401,5 +401,18 @@
         "member_request": "Барање од клиент"
     },
     "permission_memberships_view": "Преглед на членарини",
-    "permission_memberships_manage": "Управување со членарини"
+    "permission_memberships_manage": "Управување со членарини",
+    "notifications": "Известувања",
+    "notificationUnreadOnly": "Само непрочитани",
+    "notificationUnreadCount": "Непрочитани: {{count}}",
+    "notificationReadPage": "Означи ја страницата како прочитана",
+    "notificationEmpty": "Нема известувања.",
+    "notificationUnread": "Непрочитано",
+    "notificationHistorical": "Оваа порака опишува претходна состојба.",
+    "notificationMarkRead": "Означи како прочитано",
+    "notificationPages": "Страници со известувања",
+    "notificationPreferences": "Поставки за известувања",
+    "notificationReminders": "Потсетници за тренинзи",
+    "notificationExpiry": "Потсетници за истек на членство",
+    "notificationRequired": "Важните трансакциски известувања остануваат вклучени."
 }

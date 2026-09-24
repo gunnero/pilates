@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AttendanceRecord;
 use App\Models\Organization;
+use App\Models\PlatformNotification;
 use App\Models\Reservation;
 use App\Models\StudioMember;
 use App\Models\TrainingSession;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Support\Attendance;
 use App\Support\AttendanceConflict;
 use App\Support\AttendanceQr;
+use App\Support\Notifications\Delivery;
 use App\Support\SessionMaterializer;
 use App\Support\StaffRole;
 use Carbon\CarbonImmutable;
@@ -115,10 +117,14 @@ class AttendanceTest extends TestCase
         }
         $this->assertDatabaseCount('attendance_records', 2);
         $this->assertSame(1, AttendanceRecord::where('status', 'no_show')->count());
+        $notice = PlatformNotification::where('type', 'attendance.result')->sole();
+        $this->assertSame('no_show', $notice->metadata['status']);
         $this->postJson($url, ['member_id' => $n->public_id, 'status' => 'present'])->assertStatus(409);
         $this->postJson($url.'/correct', ['member_id' => $n->public_id, 'status' => 'present', 'reason' => 'late_confirmation'])->assertOk();
         $this->postJson($url.'/correct', ['member_id' => $m->public_id, 'status' => 'absent', 'reason' => 'mistake'])->assertOk()->assertJsonPath('data.checked_in_at', null);
         $this->assertSame(2, DB::table('audit_events')->where('action', 'attendance.corrected')->count());
+        $this->assertSame(3, PlatformNotification::where('type', 'attendance.result')->count());
+        $this->assertSame('suppressed', Delivery::run($notice->delivery->id));
         $this->artisan('gt:attendance:finalize', ['organization' => $o->public_id, '--from' => '2026-01-01', '--until' => '2026-12-01'])->assertFailed();
     }
 

@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\StudioMember;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Support\Notifications\Events;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -65,7 +66,11 @@ final class Attendance
         $before = $a === null ? null : ['status' => $a->status, 'method' => $a->check_in_method, 'checked_in_at' => $a->checked_in_at?->toISOString()];
         $a ??= new AttendanceRecord;
         $a->forceFill(['organization_id' => $s->organization_id, 'training_session_id' => $s->id, 'studio_member_id' => $r->studio_member_id, 'reservation_id' => $r->id, 'status' => $status, 'check_in_method' => $method, 'checked_in_at' => $status === 'present' ? now() : null, 'recorded_by' => $u?->id])->save();
-        Audit::record(Organization::findOrFail($s->organization_id), $u, $correction ? 'attendance.corrected' : $action, 'attendance_record', $a->public_id, ['session_id' => $s->public_id, 'before' => $before, 'after' => ['status' => $status, 'method' => $method, 'checked_in_at' => $a->checked_in_at?->toISOString()], 'reason' => $reason]);
+        $eventId = Audit::record(Organization::findOrFail($s->organization_id), $u, $correction ? 'attendance.corrected' : $action, 'attendance_record', $a->public_id, ['session_id' => $s->public_id, 'before' => $before, 'after' => ['status' => $status, 'method' => $method, 'checked_in_at' => $a->checked_in_at?->toISOString()], 'reason' => $reason]);
+
+        if ($status !== 'present' || $correction) {
+            Events::attendance($a, $eventId);
+        }
 
         return $a;
     }

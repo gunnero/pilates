@@ -2,9 +2,9 @@
 
 Read README.md and docs/architecture/overview.md before extending this foundation.
 
-- Work only in the requested task; GT-009 adds duration memberships and cash tracking; no GT-010, advanced packages, card payments or mobile self-service. StudioMember never means staff access.
+- Work only in the requested task; GT-010 adds notifications on the existing membership/cash domains; no GT-011 self-service, GT-012 mobile app, advanced packages or card payments. StudioMember never means staff access.
 - PostgreSQL is authoritative. Redis is cache/rate limiting only. Never flush the shared Redis service.
-- Every tenant request must authenticate, resolve membership through TenantContext, then authorize a permission before serializing data. No implicit Super Admin bypass.
+- Every staff tenant request must authenticate, resolve membership through TenantContext, then authorize a permission before serializing data. Notification-only member requests use authenticated User-derived RecipientAccess. No implicit Super Admin bypass.
 - Lifecycle mutations must take the organization row lock, re-resolve current authority, and persist audit evidence in the same transaction. Read docs/architecture/organization-lifecycle.md before extending these writers.
 - Client access currently requires all-location staff scope and members.view, with independent mutation/notes permissions. Never infer visibility from preferred location. Use JSON body search; keep names/contact/note contents out of logs and audit metadata.
 - TrainerProfile never grants authority or client visibility. Reuse current staff location scope and active statuses; future assignment writes must recheck eligibility under the organization lock. Read docs/domain/trainer-profiles.md.
@@ -23,3 +23,5 @@ Read README.md and docs/architecture/overview.md before extending this foundatio
 - Attendance uses the shared organization/session locks; present attendance blocks reservation cancellation and any attendance protects session edits/cancellation. Read docs/domain/attendance.md. Member/QR tokens never grant identity or capacity.
 
 - Financial writers use the organization lock and independent view/manage/record/correct gates. Cash/reversal records are append-only; sold membership snapshots are immutable. Read docs/domain/cash-payments.md before extending finance. Never infer financial access from attendance, TrainerProfile or location scope.
+
+- Notifications derive recipients from authenticated User links or current staff scope. Evidence/outbox creation shares domain transactions; delivery runs outside them with leases and idempotency. Read docs/domain/notifications.md. Never include monetary values or private customer contents in notification payloads/logs.

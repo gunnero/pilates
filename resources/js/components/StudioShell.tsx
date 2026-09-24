@@ -162,6 +162,7 @@ export function StudioShell() {
                 </Link>
                 <p className="nav-label">{t('workspace')}</p>
                 <nav aria-label={t('nav')}>
+                    <NavLink to="/notifications">{t('notifications')}</NavLink>
                     {sections.map((item, index) => (
                         <NavLink
                             key={item}

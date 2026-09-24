@@ -2,8 +2,11 @@
 
 use App\Models\Location;
 use App\Models\MembershipPlan;
+use App\Models\NotificationDelivery;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\PlatformNotification;
+use App\Models\Reservation;
 use App\Models\ScheduleRule;
 use App\Models\StudioMember;
 use App\Models\TrainerProfile;
@@ -11,8 +14,12 @@ use App\Models\TrainingGroup;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Support\Allocation;
+use App\Support\FinanceLifecycle;
+use App\Support\Notifications\Delivery;
+use App\Support\Notifications\Generate;
 use App\Support\SessionMaterializer;
 use App\Support\StaffRole;
+use App\Support\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
@@ -134,3 +141,65 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $plan = new MembershipPlan;
     $plan->forceFill(['organization_id' => $org->id, 'name' => 'Monthly cash', 'price_minor' => 150000, 'currency' => 'MKD', 'duration_unit' => 'months', 'duration_count' => 1, 'status' => 'active'])->save();
 }
+
+$notificationFixtures = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Notification studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Notification owner', 'email' => 'notifications-staff-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $loc = new Location;
+    $loc->forceFill(['organization_id' => $org->id, 'name' => 'Attendance Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $access->id, 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Attendance Pilates', 'capacity' => 1, 'status' => 'active'])->save();
+    $start = CarbonImmutable::now()->addHours(23);
+    $s = new TrainingSession;
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 1, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Notification owner', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $recipient = User::factory()->create(['name' => 'Notification member', 'email' => 'notifications-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $client = new StudioMember;
+    $client->forceFill(['organization_id' => $org->id, 'user_id' => $recipient->id, 'first_name' => 'Inbox', 'last_name' => 'Client', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'mk'])->save();
+    $other = new StudioMember;
+    $other->forceFill(['organization_id' => $org->id, 'first_name' => 'Other', 'last_name' => 'Client', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
+    DB::transaction(function () use ($org, $s, $client, $other, $actor) {
+        Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+        Allocation::reserve($s, $other, $actor, false);
+        Allocation::reserve($s, $client, $actor, true);
+        $first = Reservation::where('training_session_id', $s->id)->where('status', 'active')->firstOrFail();
+        Allocation::cancel($s, $first, $actor);
+    });
+    // Confirm one reservation, then cancel before reminder generation in the eligible window.
+    $cancelSession = $s->replicate(['public_id']);
+    $cancelSession->forceFill(['starts_at' => $s->starts_at->addHour(), 'ends_at' => $s->ends_at->addHour(), 'local_date' => $s->starts_at->addHour()->setTimezone($org->timezone)->toDateString()])->save();
+    DB::transaction(function () use ($org, $cancelSession, $client, $actor) {
+        Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+        Allocation::reserve($cancelSession, $client, $actor, false);
+    });
+    $cancelReservation = Reservation::where('training_session_id', $cancelSession->id)->firstOrFail();
+    Delivery::run(PlatformNotification::where('reservation_id', $cancelReservation->id)->firstOrFail()->delivery->id);
+    DB::transaction(function () use ($org, $cancelSession, $cancelReservation, $actor) {
+        Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+        Allocation::cancel($cancelSession, $cancelReservation, $actor);
+    });
+    $context = app(TenantContext::class);
+    $context->resolve($actor, $org->public_id);
+    $plan = FinanceLifecycle::plan($context, $actor, ['name' => 'Inbox plan', 'price_minor' => 150000, 'duration_unit' => 'days', 'duration_count' => 7, 'status' => 'active']);
+    $membership = FinanceLifecycle::assign($context, $actor, $client->public_id, $plan->public_id, now($org->timezone)->toDateString());
+    $payment = FinanceLifecycle::pay($context, $actor, ['membership_id' => $membership->public_id, 'amount_minor' => 150000, 'paid_at' => now()->toISOString(), 'request_id' => (string) Str::uuid7()]);
+    Delivery::run(PlatformNotification::where('cash_payment_id', $payment->id)->firstOrFail()->delivery->id);
+    FinanceLifecycle::reverse($context, $actor, $payment->public_id, 'wrong_amount');
+    Generate::run($org->public_id);
+    $rerun = Generate::run($org->public_id);
+    if (PlatformNotification::where('reservation_id', $cancelReservation->id)->where('type', 'session.reminder')->exists()) {
+        throw new RuntimeException('Cancelled reservation received reminder');
+    }
+    if ($rerun['created'] !== 0 || $rerun['failed'] !== 0) {
+        throw new RuntimeException('Notification fixture idempotency failed');
+    }
+    foreach (NotificationDelivery::where('organization_id', $org->id)->pluck('id') as $delivery) {
+        Delivery::run($delivery);
+    }
+    $notificationFixtures[$viewport] = ['organization' => $org->public_id];
+}
+file_put_contents(base_path('.local/browser-notification-fixture.json'),json_encode($notificationFixtures,JSON_THROW_ON_ERROR));

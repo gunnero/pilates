@@ -1,6 +1,6 @@
 # GT / GrupniTreninzi.mk
 
-A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-008 adds attendance, trainer check-in, capacity-safe walk-ins, no-show finalization and secure QR foundations.** Authentication, tenant isolation, explicit permissions, transactional audit evidence and localized management screens are implemented. StudioMember is a customer who may have no account, phone or email; OrganizationMembership remains staff access; TrainerProfile optionally adds teaching information without granting access. Payments, mobile self-service and advanced business dashboards remain unimplemented.
+A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-010 adds durable notifications, reminders and a recipient-owned inbox, building on attendance and cash memberships.** Authentication, tenant isolation, explicit permissions, transactional audit evidence and localized management screens are implemented. StudioMember is a customer who may have no account, phone or email; OrganizationMembership remains staff access; TrainerProfile optionally adds teaching information without granting access. Card/mobile payments, member self-service and advanced business dashboards remain unimplemented.
 
 ## Stack and requirements
 
@@ -73,3 +73,5 @@ GT-008 now implements durable attendance, staff/trainer roster and today workflo
 ## GT-009 memberships and cash
 
 [Domain, API and permission contracts](docs/domain/cash-payments.md) cover duration plans, immutable sold periods, partial cash payments, full reversals and responsive membership workflows. No existing staff grants are expanded during migration. Trusted adoption: `php artisan gt:finance-access-enable ORGANIZATION_UUID STAFF_MEMBERSHIP_UUID --reason="Approved adoption"`. Read-only consistency: `php artisan gt:finance:check`. Do not use financial membership state to infer reservation/attendance eligibility.
+
+See [notification contracts and operations](docs/domain/notifications.md) and [GT-010 verification](docs/development/gt-010-verification.md).

@@ -23,3 +23,7 @@ GT-008 now implements durable attendance, staff/trainer roster and today workflo
 ## GT-009 membership and cash extension
 
 See [membership and cash contracts](../domain/cash-payments.md). Immutable commercial snapshots and append-only cash/reversal records use PostgreSQL, tenant-qualified ownership and the common organization lock. Financial grants deliberately have organization scope; attendance and TrainerProfile confer no financial access. Membership validity does not gate bookings or attendance in GT-009.
+
+## GT-010 notifications
+
+GT-010 adds immutable tenant/recipient notification evidence and a durable polling outbox. Existing lifecycle transactions create evidence atomically; provider-neutral delivery runs outside those transactions. Notification-only inbox access supports existing authenticated member links without extending member self-service. See [notifications](../domain/notifications.md).

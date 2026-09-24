@@ -131,3 +131,7 @@ GT-008 now implements durable attendance, staff/trainer roster and today workflo
 ## GT-009 finance API
 
 Membership plans, concrete memberships, financial member summaries and append-only cash/reversal endpoints are implemented under the organization prefix. See [endpoint and serialization contract](../domain/cash-payments.md#api-and-query-foundation). Read grants are checked before queries/serialization; monetary fields require payments.view. Mutations reject unknown keys and reauthorize under the common lock.
+
+## GT-010 notifications
+
+GT-010 adds notification-contexts and organization-scoped notifications list/detail, first-read/bulk-read and preferences endpoints. See [complete notification API and bounds](../domain/notifications.md#inbox-preferences-and-authorization). This is notification-only access for existing users, not a general member API.

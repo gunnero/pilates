@@ -8,6 +8,8 @@ use App\Models\MembershipPlan;
 use App\Models\PaymentReversal;
 use App\Models\StudioMember;
 use App\Models\User;
+use App\Support\Notifications\Events;
+use App\Support\Notifications\NotificationType;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 
@@ -48,6 +50,8 @@ final class FinanceLifecycle
             $mm = new MemberMembership;
             $mm->forceFill(['organization_id' => $c->organization()->id, 'studio_member_id' => $m->id, 'membership_plan_id' => $p->id, 'plan_name' => $p->name, 'agreed_price_minor' => $p->price_minor, 'currency' => $p->currency, 'duration_unit' => $p->duration_unit, 'duration_count' => $p->duration_count, 'starts_on' => $start, 'ends_on' => $end, 'created_by' => $u->id])->save();
             Audit::record($c->organization(), $u, 'membership.created', 'member_membership', $mm->public_id, ['plan_id' => $p->public_id, 'starts_on' => $start, 'ends_on' => $end, 'agreed_price_minor' => $mm->agreed_price_minor, 'currency' => $mm->currency]);
+
+            Events::membership($mm, NotificationType::MembershipCreated);
 
             return $mm;
         });
@@ -96,6 +100,8 @@ final class FinanceLifecycle
             $p->forceFill(['organization_id' => $c->organization()->id, 'studio_member_id' => $m->studio_member_id, 'member_membership_id' => $m->id, 'amount_minor' => $data['amount_minor'], 'currency' => $m->currency, 'paid_at' => $paid, 'recorded_by' => $u->id, 'note' => $data['note'] ?? null, 'request_id' => $data['request_id']])->save();
             Audit::record($c->organization(), $u, 'cash.recorded', 'cash_payment', $p->public_id, ['membership_id' => $m->public_id, 'amount_minor' => $p->amount_minor, 'currency' => $p->currency, 'paid_at' => $paid->toIso8601String()]);
 
+            Events::payment($p);
+
             return $p;
         });
     }
@@ -110,7 +116,9 @@ final class FinanceLifecycle
             }
             $r = new PaymentReversal;
             $r->forceFill(['organization_id' => $c->organization()->id, 'cash_payment_id' => $p->id, 'amount_minor' => $p->amount_minor, 'currency' => $p->currency, 'reason' => $reason, 'recorded_by' => $u->id])->save();
-            Audit::record($c->organization(),$u,'cash.reversed','payment_reversal',$r->public_id,['payment_id' => $p->public_id, 'membership_id' => $p->membership->public_id, 'amount_minor' => $r->amount_minor, 'currency' => $r->currency, 'reason' => $reason]);
+            Audit::record($c->organization(), $u, 'cash.reversed', 'payment_reversal', $r->public_id, ['payment_id' => $p->public_id, 'membership_id' => $p->membership->public_id, 'amount_minor' => $r->amount_minor, 'currency' => $r->currency, 'reason' => $reason]);
+
+            Events::payment($p, $r);
 
             return $r;
         });

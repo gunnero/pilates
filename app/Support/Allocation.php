@@ -9,6 +9,8 @@ use App\Models\StudioMember;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Models\WaitingListEntry;
+use App\Support\Notifications\Events;
+use App\Support\Notifications\NotificationType;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -57,6 +59,8 @@ final class Allocation
         }
         $r = new Reservation;
         $r->forceFill(['organization_id' => $s->organization_id, 'training_session_id' => $s->id, 'studio_member_id' => $m->id, 'source' => $source, 'permanent_spot_id' => $spotId, 'created_by' => $actor?->id, 'status' => 'active'])->save();
+
+        Events::reservation($r, $source === 'waiting_list' ? NotificationType::WaitingPromoted : NotificationType::ReservationConfirmed);
 
         return $r;
     }
@@ -140,6 +144,7 @@ final class Allocation
             throw new ReservationConflict('session_started');
         }
         $r->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
+        Events::reservation($r, NotificationType::ReservationCancelled);
         if ($suppress) {
             DB::table('permanent_spot_releases')->insertOrIgnore(['organization_id' => $s->organization_id, 'training_session_id' => $s->id, 'studio_member_id' => $r->studio_member_id, 'released_at' => now()]);
         }

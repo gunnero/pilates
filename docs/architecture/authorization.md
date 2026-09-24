@@ -27,3 +27,7 @@ GT-008 now implements durable attendance, staff/trainer roster and today workflo
 ## GT-009 financial authority
 
 Financial grants are explicit organization-wide powers, even for selected-location staff. memberships.view provides redacted commercial-period metadata; payments.view gates all money/history; record/correct remain separate and also require view. reports.view plus payments.view gates metrics. No trainer-profile, attendance or location-scope inference grants finance. Existing grants are preserved; adoption is opt-in. See [full permission matrix](../domain/cash-payments.md#authority-and-privacy).
+
+## GT-010 notifications
+
+GT-010 notification endpoints authenticate then derive recipient ownership. Staff continue through TenantContext, studio.access and session location/trainer scope; member inbox identity comes only from the existing active StudioMember.user_id link. Token abilities notifications.view/read restrict access further and add no stored staff grants. No caller-selected recipient or financial payload is accepted. See [recipient contract](../domain/notifications.md).

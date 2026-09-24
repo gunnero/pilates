@@ -8,6 +8,7 @@ use App\Models\TrainerProfile;
 use App\Models\TrainingGroup;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Support\Notifications\Events;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -89,11 +90,16 @@ final class SessionLifecycle
             if (! $creating && Allocation::count($s) > $s->capacity) {
                 throw new ReservationConflict('capacity_conflict');
             }
+            $materialChange = ! $creating && $s->isDirty(['starts_at', 'ends_at', 'location_id', 'trainer_profile_id']);
             $s->save();
             if (! $creating) {
                 Allocation::promote($s, $actor);
             }
-            Audit::record($context->organization(), $actor, $creating ? 'session.manual_created' : 'session.overridden', 'training_session', $s->public_id, ['before' => $before, 'after' => self::evidence($s)]);
+            $eventId = Audit::record($context->organization(), $actor, $creating ? 'session.manual_created' : 'session.overridden', 'training_session', $s->public_id, ['before' => $before, 'after' => self::evidence($s)]);
+
+            if ($materialChange) {
+                Events::session($s, false, $eventId);
+            }
 
             return $s;
         });
@@ -133,7 +139,11 @@ final class SessionLifecycle
 
     public static function markCancelled(TrainingSession $s, string $kind, ?string $reason = null): void
     {
+        if ($s->status === 'cancelled') {
+            return;
+        }
         self::assertNoAttendance($s);
         $s->forceFill(['status' => 'cancelled', 'cancelled_at' => now(), 'cancellation_kind' => $kind, 'cancellation_reason' => $reason])->save();
+        Events::session($s, true, 'cancelled');
     }
 }
