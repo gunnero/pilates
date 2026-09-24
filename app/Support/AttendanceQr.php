@@ -13,7 +13,8 @@ final class AttendanceQr
     public static function issue(TrainingSession $s): array
     {
         AttendancePolicy::memberWindow($s);
-        $expires = now()->addSeconds(AttendancePolicy::QR_SECONDS)->min($s->starts_at->addMinutes(AttendancePolicy::MEMBER_LATE_MINUTES))->min($s->ends_at);
+        $policy = StudioSettings::forOrganization($s->organization_id);
+        $expires = now()->addSeconds($policy->qr_lifetime_seconds)->min($s->starts_at->addMinutes($policy->check_in_late_minutes))->min($s->ends_at);
 
         if ($expires->lte(now())) {
             throw new AttendanceConflict('window');
@@ -21,7 +22,7 @@ final class AttendanceQr
         $token = Crypt::encryptString(json_encode(['v' => 1, 'organization' => $s->organization_id, 'session' => $s->public_id, 'issued' => now()->timestamp, 'expires' => $expires->timestamp], JSON_THROW_ON_ERROR));
         $payload = 'GTQR1:'.json_encode(['organization' => Organization::findOrFail($s->organization_id)->public_id, 'session' => $s->public_id, 'credential' => $token], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
 
-        return ['token' => $token, 'payload' => $payload, 'expires_at' => $expires->toIso8601String(), 'server_time' => now()->toIso8601String(), 'refresh_after' => max(1, min(30, $expires->getTimestamp() - now()->getTimestamp()))];
+        return ['token' => $token, 'payload' => $payload, 'expires_at' => $expires->toIso8601String(), 'server_time' => now()->toIso8601String(), 'refresh_after' => max(1, min($policy->qr_rotation_seconds, $expires->getTimestamp() - now()->getTimestamp()))];
     }
 
     public static function validate(TrainingSession $s, string $token, bool $detailed = false): void

@@ -147,3 +147,7 @@ GT-012 adds no production endpoint. The Expo app uses the GT-011 member routes a
 ## GT-013
 
 `POST /api/v1/member/organizations/{organization}/sessions/{session}/check-in` requires authenticated member authority and `{credential}` only. Staff issuance remains `POST /api/v1/organizations/{organization}/sessions/{session}/attendance/qr`; roster refresh uses the existing paginated attendance GET. Own attendance history includes `method`. Explicit response fields, finite errors, limits and privacy are specified in [secure check-in](../domain/secure-check-in.md).
+
+## GT-014 studio settings
+
+GT-014 adds staff GET/PATCH organizations/{organization}/settings and member GET member/organizations/{organization}/settings. Staff routes require organizations.view/manage; the member route returns a finite own-studio subset. Strict JSON types, a 4 KiB PATCH limit, numeric bounds and unknown-key rejection apply. See [catalog and API](../domain/studio-settings.md).

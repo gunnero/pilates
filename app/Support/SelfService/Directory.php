@@ -10,6 +10,7 @@ use App\Models\StudioMember;
 use App\Models\TrainingSession;
 use App\Support\MembershipPeriod;
 use App\Support\SessionDirectory;
+use App\Support\StudioSettings;
 use Illuminate\Database\Eloquent\Builder;
 
 final class Directory
@@ -21,19 +22,22 @@ final class Directory
     }
 
     /** @return array<string,mixed> */
-    public static function session(TrainingSession $s): array
+    public static function session(TrainingSession $s, ?StudioSettings $policy = null): array
     {
+        $policy ??= StudioSettings::forOrganization($s->organization_id);
         $r = $s->reservations->first();
         $w = $s->waitingEntries->first();
         $ready = $s->status === 'scheduled' && $s->starts_at->isFuture() && SessionDirectory::issues($s) === [];
 
-        return ['id' => $s->public_id, 'group' => ['id' => $s->group->public_id, 'name' => $s->group_name], 'location' => ['id' => $s->location->public_id, 'name' => $s->location_name], 'trainer' => ['id' => $s->trainer->public_id, 'name' => $s->trainer_name], 'local_date' => $s->local_date, 'starts_at' => $s->starts_at->toISOString(), 'ends_at' => $s->ends_at->toISOString(), 'timezone' => $s->timezone, 'status' => $s->status, 'capacity' => $s->capacity, 'available_spots' => SessionDirectory::available($s), 'can_reserve' => $ready, 'can_join_waiting' => $ready && $s->waiting_count < 1000, 'attendance_status' => $s->getAttribute('member_attendance') ?? 'pending', 'reservation' => $r === null ? null : self::reservation($r, $s), 'waiting_entry' => $w === null ? null : ['id' => $w->public_id, 'status' => $w->status, 'can_cancel' => $w->status === 'waiting']];
+        return ['id' => $s->public_id, 'group' => ['id' => $s->group->public_id, 'name' => $s->group_name], 'location' => ['id' => $s->location->public_id, 'name' => $s->location_name], 'trainer' => ['id' => $s->trainer->public_id, 'name' => $s->trainer_name], 'local_date' => $s->local_date, 'starts_at' => $s->starts_at->toISOString(), 'ends_at' => $s->ends_at->toISOString(), 'timezone' => $s->timezone, 'status' => $s->status, 'capacity' => $s->capacity, 'available_spots' => SessionDirectory::available($s), 'can_reserve' => $ready && $policy->canReserve($s), 'can_join_waiting' => $ready && $policy->canReserve($s) && $policy->waiting_list_enabled && $s->waiting_count < 1000, 'attendance_status' => $s->getAttribute('member_attendance') ?? 'pending', 'reservation' => $r === null ? null : self::reservation($r, $s, $policy), 'waiting_entry' => $w === null ? null : ['id' => $w->public_id, 'status' => $w->status, 'can_cancel' => $w->status === 'waiting' && $policy->self_cancellation_enabled]];
     }
 
     /** @return array<string,mixed> */
-    public static function reservation(Reservation $r, TrainingSession $s): array
+    public static function reservation(Reservation $r, TrainingSession $s, ?StudioSettings $policy = null): array
     {
-        return ['id' => $r->public_id, 'status' => $r->status, 'source' => $r->source, 'can_cancel' => $r->status === 'active' && $s->starts_at->isFuture() && $s->getAttribute('member_attendance') !== 'present'];
+        $policy ??= StudioSettings::forOrganization($s->organization_id);
+
+        return ['id' => $r->public_id, 'status' => $r->status, 'source' => $r->source, 'can_cancel' => $r->status === 'active' && $policy->canCancel($s) && $s->getAttribute('member_attendance') !== 'present'];
     }
 
     /** @return array<string,mixed> */

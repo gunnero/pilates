@@ -56,10 +56,13 @@ async function setup(
         data: [],
     }),
     width = 320,
+    settings = { self_check_in_enabled: true },
 ) {
     const transport = jest.fn(
         async (url: string | URL | Request, init?: RequestInit) => {
-            const data = handler(String(url), init);
+            const data = String(url).endsWith('/settings')
+                ? { data: { ...settings } }
+                : handler(String(url), init);
             return {
                 ok: true,
                 status: 200,
@@ -126,6 +129,11 @@ async function setup(
                 </QueryClientProvider>
             </LocaleProvider>
         </SafeAreaProvider>,
+    );
+    await waitFor(() =>
+        expect(
+            cache.getQueryData(['member', 'A', org, 'settings']),
+        ).toBeDefined(),
     );
     return { transport, api, controller, cache, ...view };
 }
@@ -299,4 +307,30 @@ test('already-present result is server-derived and stale camera callbacks after 
     unmount();
     await act(async () => mockScan?.({ data: payload() }));
     expect(check).toHaveBeenCalledTimes(1);
+});
+
+test('studio QR disablement hides camera controls and refresh applies current policy', async () => {
+    const settings = { self_check_in_enabled: false };
+    const { api } = await setup(
+        <CheckIn />,
+        () => ({ data: [] }),
+        320,
+        settings,
+    );
+    const check = jest.spyOn(api, 'checkIn');
+    expect(
+        screen.getByText(
+            'Ова дејство е оневозможено од студиото. Побарајте помош од персоналот.',
+        ),
+    ).toBeTruthy();
+    expect(
+        screen.queryByRole('button', { name: 'Овозможи камера' }),
+    ).toBeNull();
+    expect(mockRequestPermission).not.toHaveBeenCalled();
+    settings.self_check_in_enabled = true;
+    fireEvent.press(screen.getByRole('button', { name: 'Освежи' }));
+    expect(
+        await screen.findByRole('button', { name: 'Овозможи камера' }),
+    ).toBeTruthy();
+    expect(check).not.toHaveBeenCalled();
 });

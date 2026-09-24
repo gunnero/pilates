@@ -53,3 +53,7 @@ Organization-wide serialization favors correctness over peak write throughput. S
 ## GT-013 secure member check-in
 
 The previously deferred member HTTP/camera integration is implemented. See [secure check-in contract](secure-check-in.md) for the mandatory authenticated QR endpoint, shared rotating credential, half-open server window, current eligibility checks, mobile scanner, live roster and fallback. Existing GT-008 records, corrections, no-show, walk-in, capacity and audit rules remain authoritative. No schema change or additional attendance domain was added.
+
+## GT-014 studio settings
+
+GT-014 adds bounded member check-in windows and enablement. Staff manual attendance retains its existing independent window and permissions. Current policy is checked under the existing locks; attendance history is never rewritten. See [settings](studio-settings.md).

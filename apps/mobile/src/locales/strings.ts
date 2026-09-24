@@ -1,4 +1,6 @@
 export const en = {
+    policyDisabled:
+        'This action is disabled by your studio. Ask the studio team for help.',
     checkIn: 'Scan to check in',
     cameraWhy:
         'Point your camera at the trainer’s current QR code. No photos or video are saved. Attendance is confirmed by the studio server.',
@@ -173,6 +175,8 @@ export const en = {
 };
 export type TextKey = keyof typeof en;
 export const mk: Record<TextKey, string> = {
+    policyDisabled:
+        'Ова дејство е оневозможено од студиото. Побарајте помош од персоналот.',
     checkIn: 'Скенирај за присуство',
     cameraWhy:
         'Насочете ја камерата кон тековниот QR код кај тренерот. Не се зачувуваат фотографии или видео. Присуството го потврдува серверот на студиото.',

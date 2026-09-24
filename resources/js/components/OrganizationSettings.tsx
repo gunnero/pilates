@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StudioPolicies } from './StudioPolicies';
 import { api, errorMessage, type Organization } from '../lib/api';
 export function OrganizationSettings({
     organization,
@@ -15,10 +16,15 @@ export function OrganizationSettings({
     const manage = organization.permissions.includes('organizations.manage');
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        const data = Object.fromEntries(new FormData(event.currentTarget));
+        if (
+            data.timezone !== organization.timezone &&
+            !window.confirm(t('policy.timezoneConfirm'))
+        )
+            return;
         setBusy(true);
         setError('');
         setSaved(false);
-        const data = Object.fromEntries(new FormData(event.currentTarget));
         try {
             await api.patch(`/api/v1/organizations/${organization.id}`, data);
             setSaved(true);
@@ -34,6 +40,7 @@ export function OrganizationSettings({
     return (
         <section className="management-panel">
             <h2>{t('organizationSettings')}</h2>
+            <h3>{t('policy.general')}</h3>
             <form
                 className="management-form"
                 onSubmit={(event) => void submit(event)}
@@ -60,12 +67,23 @@ export function OrganizationSettings({
                     </label>
                     <label>
                         {t('timezone')}
-                        <input
+                        <select
                             name="timezone"
                             defaultValue={organization.timezone}
-                            required
-                            maxLength={64}
-                        />
+                        >
+                            {[
+                                ...new Set([
+                                    organization.timezone,
+                                    'UTC',
+                                    ...Intl.supportedValuesOf('timeZone'),
+                                ]),
+                            ]
+                                .sort()
+                                .map((zone) => (
+                                    <option key={zone}>{zone}</option>
+                                ))}
+                        </select>
+                        <small>{t('policy.timezoneHelp')}</small>
                     </label>
                     <label>
                         {t('currency')}
@@ -100,6 +118,11 @@ export function OrganizationSettings({
                 )}
                 {saved && <p role="status">{t('saved')}</p>}
             </form>
+            <StudioPolicies
+                key={organization.id}
+                organization={organization.id}
+                manage={manage}
+            />
         </section>
     );
 }

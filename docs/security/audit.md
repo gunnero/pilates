@@ -48,3 +48,7 @@ GT-010 uses immutable notification evidence plus bounded attempt history. Prefer
 GT-011 audits invitation creation/revocation, explicit account linking, studio switching and changed profile field names in tenant transactions. Global account_security_events provides immutable password/reset/token event evidence without tenant context, metadata or secrets. See [member lifecycle](../domain/member-self-service.md).
 
 GT-013 QR redemption reuses the transactional `attendance.marked` evidence with authenticated actor and server-derived method `qr`. Idempotent reads and QR rotations produce no additional audit events. Never store raw QR credentials, camera media or authentication headers in audit/operational logs. Existing authorized correction evidence remains authoritative; see [secure check-in](../domain/secure-check-in.md).
+
+## GT-014 studio settings
+
+GT-014 records studio.settings_changed against the organization, with changed nullable overrides and effective before/after values, actor and UTC time in the same transaction. Keys and values come from a finite typed catalog; no PII/secrets or QR credentials are included. No-op updates and reads do not add events. See [settings](../domain/studio-settings.md).

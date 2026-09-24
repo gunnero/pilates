@@ -53,3 +53,7 @@ No attendance/no-show/check-in, QR, financial/package validation, notifications,
 ## GT-008 attendance extension
 
 GT-008 now implements durable attendance, staff/trainer roster and today workflows, capacity-safe offline walk-ins, no-show finalization, audited corrections and encrypted expiring QR foundations. Earlier attendance deferrals above describe the prior milestone. See [attendance contracts](../domain/attendance.md) for authorization, API, privacy, concurrency, lifecycle protection and future member-authentication boundaries. Existing grants are preserved; adoption is explicit. No member check-in HTTP endpoint, payments, mobile app or GT-009 is included.
+
+## GT-014 studio settings
+
+GT-014 applies current member booking/cancellation settings under the organization lock. Defaults preserve prior behavior, including booking any existing future session. New waiting admission can be disabled without altering FIFO or existing queues. Server-derived member action flags reflect policy, but writers recheck it. See [settings and boundaries](studio-settings.md).

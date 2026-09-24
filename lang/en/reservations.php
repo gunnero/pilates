@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'policy' => 'This action is unavailable under the current studio policy. Please contact the studio.',
     'session_cancelled' => 'This session is cancelled.',
     'session_started' => 'This session has already started.',
     'session_unavailable' => 'This session is unavailable.',

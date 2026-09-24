@@ -1,6 +1,6 @@
 # System overview and repository ownership
 
-GT is a modular monolith. Laravel owns HTTP authentication, authorization, relational state and all future domain rules. React is a first-party same-origin admin client. Future trainer screens and an Expo/React Native member app will use the same `/api/v1` API. No mobile application or microservice exists.
+GT is a modular monolith. Laravel owns HTTP authentication, authorization, relational state and all future domain rules. React is a first-party same-origin admin client. Trainer screens and the Expo/React Native member app use the same `/api/v1` API. No microservice exists. The milestone sections below record how the foundation evolved.
 
 Backend source is `app/`, migrations/factories are `database/`, routes are `routes/`. Frontend code and component tests live in `resources/js/`, CSS in `resources/css/`, and the server-rendered HTML entry point in `resources/views/app.blade.php`. Both package manifests and lockfiles live at the root. This is one deployable application with obvious source ownership, not two projects or a nested pilates directory.
 
@@ -39,3 +39,7 @@ GT-011 adds optional account activation and member self-service using the same g
 ## GT-013 member attendance boundary
 
 Authenticated QR redemption resolves `MemberContext` under the organization lock, then uses GT-008 session locking and attendance writes. It never enters reservation allocation or waiting promotion. The native app treats camera data as untrusted, and trainer web display/roster reuse staff permission and location/trainer scope. There is no new persistence. See [secure check-in](../domain/secure-check-in.md) for API, crypto, expiry, privacy, audit, operating limits and failure semantics.
+
+## GT-014 studio settings
+
+GT-014 centralizes operational defaults in a readonly typed StudioSettings resolver backed by optional, explicit PostgreSQL columns. Identity stays on Organization; writers resolve policy after the shared organization lock. Read [the settings contract](../domain/studio-settings.md).

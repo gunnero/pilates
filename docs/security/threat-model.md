@@ -173,3 +173,7 @@ The fixed-origin transport rejects redirects and release HTTP, omits cookies and
 ## GT-013 QR boundary
 
 Camera input, envelope routing hints and mobile clocks are untrusted. Laravel authenticated encryption binds version, tenant/session and server expiry; the server rechecks current linked identity, member.write, lifecycle and active reservation under organization/session locks. PostgreSQL uniqueness and existing capacity/FIFO invariants remain authoritative. Scan parsing never navigates URLs; credentials remain transient and out of logs/cache/storage. Shared QR lifetime admits multiple legitimate members and overlapping rotations; live relay within that lifetime is not prevented. Roster polling remains staff-scoped. App check-in cannot allocate, promote or self-correct. See [secure check-in](../domain/secure-check-in.md) for exact limits and operational assumptions.
+
+## GT-014 studio settings
+
+GT-014 adds an authorized organization policy boundary: strict known JSON fields and hard DB bounds prevent configuration injection; no generic config/secrets endpoint or shared cache exists. Policy and lifecycle writers share the organization lock. Critical review hypotheses are stale-policy booking/check-in/reminder races, QR lifetime weakening, unauthorized tenant mutations and timezone reinterpretation. Existing capacity/FIFO, crypto, permission and immutable-history boundaries remain fixed. See [settings](../domain/studio-settings.md) and [GT-014 review](gt-014-review.md).

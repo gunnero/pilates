@@ -548,3 +548,26 @@ test('profile respects locale and saves notification preferences through the ser
     test.unmount();
     test.cache.clear();
 });
+
+test('current server policy hides member reservation and cancellation actions', async () => {
+    const test = await setup(<SessionDetail />, () => ({
+        data: {
+            ...session,
+            can_reserve: false,
+            can_join_waiting: false,
+            reservation: { id, status: 'active', can_cancel: false },
+        },
+    }));
+    await screen.findByText(session.group.name);
+    expect(screen.queryByRole('button', { name: 'Резервирај' })).toBeNull();
+    expect(
+        screen.queryByRole('button', { name: 'Откажи резервација' }),
+    ).toBeNull();
+    expect(
+        screen.queryByRole('button', {
+            name: 'Приклучи се на листа на чекање',
+        }),
+    ).toBeNull();
+    test.unmount();
+    test.cache.clear();
+});

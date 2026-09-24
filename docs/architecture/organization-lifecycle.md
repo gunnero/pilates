@@ -71,3 +71,7 @@ Group/schedule writers join the same organization lock protocol. New permission 
 ## GT-006 shared lock
 
 Generation, manual sessions, occurrence edits/cancellation and recurring reconciliation all use the organization lock. HTTP mutations re-resolve current membership and required grants after acquisition. Source deactivation remains allowed and audited; existing sessions expose current operational issues and preserve snapshots. Timezone changes are blocked after any rule or session exists. Group changes never cascade silently into prepared occurrences.
+
+## GT-014 studio settings
+
+GT-014 settings reuse organizations.view/manage. Mutations acquire the same organization lock, re-resolve authority, patch only supplied known keys, and record override/effective before and after values atomically. Concurrent same-key changes use the last serialized successful writer; unrelated partial updates merge. See [settings](../domain/studio-settings.md).

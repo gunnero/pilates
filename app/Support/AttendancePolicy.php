@@ -25,10 +25,14 @@ final class AttendancePolicy
     public static function memberWindow(TrainingSession $s, bool $detailed = false): void
     {
         self::operational($s);
-        if (now()->lt($s->starts_at->subMinutes(self::EARLY_MINUTES))) {
+        $policy = StudioSettings::forOrganization($s->organization_id);
+        if (! $policy->self_check_in_enabled) {
+            throw new AttendanceConflict('policy');
+        }
+        if (now()->lt($s->starts_at->subMinutes($policy->check_in_early_minutes))) {
             throw new AttendanceConflict($detailed ? 'too_early' : 'window');
         }
-        if (($detailed ? now()->gte($s->starts_at->addMinutes(self::MEMBER_LATE_MINUTES)) : now()->gt($s->starts_at->addMinutes(self::MEMBER_LATE_MINUTES))) || now()->gte($s->ends_at)) {
+        if (($detailed ? now()->gte($s->starts_at->addMinutes($policy->check_in_late_minutes)) : now()->gt($s->starts_at->addMinutes($policy->check_in_late_minutes))) || now()->gte($s->ends_at)) {
             throw new AttendanceConflict($detailed ? 'too_late' : 'window');
         }
     }

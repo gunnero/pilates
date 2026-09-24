@@ -484,5 +484,40 @@
             "skipped": "Skipped"
         }
     },
-    "qrMethod": "QR check-in"
+    "qrMethod": "QR check-in",
+    "policy": {
+        "title": "Studio policies",
+        "help": "Changes apply immediately to future actions. Existing records and queue order are preserved. A reservation horizon of 0 allows any existing future session. Staff can still assist members.",
+        "general": "General",
+        "reservations": "Reservations",
+        "attendance": "Attendance & Check-In",
+        "notifications": "Notifications & membership display",
+        "member_app": "Member App",
+        "default": "Default",
+        "inherited": "Using default",
+        "override": "Studio override",
+        "reset": "Use default",
+        "on": "Enabled",
+        "off": "Disabled",
+        "confirm": "Apply these policies now? Members may lose the ability to book, cancel or scan. Authorized staff can assist. Existing records will remain unchanged.",
+        "apply": "Apply policies",
+        "timezoneHelp": "Timezone changes are blocked once any schedule rule or session exists. Historical times are never rewritten.",
+        "timezoneConfirm": "Change the studio timezone for future operations? This is only allowed before schedules or sessions exist.",
+        "reservation_horizon_days": "Reservation horizon (days; 0 = existing future sessions)",
+        "reservation_cutoff_minutes": "Booking cutoff (minutes before start)",
+        "cancellation_cutoff_minutes": "Cancellation cutoff (minutes before start)",
+        "waiting_list_enabled": "New waiting-list entries",
+        "self_reservation_enabled": "Member self-reservation",
+        "self_cancellation_enabled": "Member self-cancellation",
+        "self_check_in_enabled": "Member QR check-in",
+        "check_in_early_minutes": "Check-in opens (minutes before start)",
+        "check_in_late_minutes": "Check-in closes (minutes after start)",
+        "qr_lifetime_seconds": "QR lifetime (seconds; maximum 90)",
+        "qr_rotation_seconds": "QR rotation (seconds; at most half the lifetime)",
+        "session_reminders_enabled": "Session reminders",
+        "reminder_lead_hours": "Session reminder lead time (hours)",
+        "expiry_warnings_enabled": "Membership expiry warnings",
+        "expiry_warning_days": "Membership expiry warning (days)",
+        "membership_expiring_days": "Expiring membership display (days)"
+    }
 }

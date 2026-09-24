@@ -33,7 +33,7 @@ class AttendanceMigrationTest extends TestCase
                 $this->postJson($this->base($o)."/sessions/$s->public_id/reservations", ['member_id' => $m->public_id, 'allow_waiting' => true])->assertOk();
             }
         }
-        Artisan::call('migrate:rollback', ['--step' => 4, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 5, '--force' => true]);
         $tables = ['users', 'organizations', 'locations', 'organization_memberships', 'membership_locations', 'studio_members', 'trainer_profiles', 'training_groups', 'schedule_rules', 'training_sessions', 'reservations', 'waiting_list_entries', 'permanent_spots', 'permanent_spot_releases', 'audit_events'];
         $before = [];
         foreach ($tables as $table) {

@@ -104,6 +104,10 @@ final class Allocation
         }
         $s = self::lock($s);
         self::eligible($s, $walkIn);
+        $settings = StudioSettings::forOrganization($s->organization_id);
+        if ($source === 'member' && ! $settings->canReserve($s)) {
+            throw new ReservationConflict('policy');
+        }
         if ($m->organization_id !== $s->organization_id || $m->status !== MemberStatus::Active) {
             throw new ReservationConflict('member_ineligible');
         }
@@ -121,6 +125,9 @@ final class Allocation
             Audit::record(Organization::findOrFail($s->organization_id), $actor, 'reservation.created', 'reservation', $r->public_id, ['session_id' => $s->public_id]);
 
             return ['outcome' => 'reserved', 'reservation' => $r, 'waiting_entry' => null];
+        }
+        if ($allowWaiting && ! $settings->waiting_list_enabled) {
+            throw new ReservationConflict('policy');
         }
         if (! $allowWaiting) {
             throw new ReservationConflict('capacity_conflict');

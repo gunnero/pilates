@@ -1,6 +1,6 @@
 # GT / GrupniTreninzi.mk
 
-A multi-tenant studio platform, initially for Pilates in North Macedonia. **GT-010 adds durable notifications, reminders and a recipient-owned inbox, building on attendance and cash memberships.** Authentication, tenant isolation, explicit permissions, transactional audit evidence and localized management screens are implemented. StudioMember is a customer who may have no account, phone or email; OrganizationMembership remains staff access; TrainerProfile optionally adds teaching information without granting access. Card/mobile payments, member self-service and advanced business dashboards remain unimplemented.
+A multi-tenant studio platform, initially for Pilates in North Macedonia. GT-001 through GT-014 implement tenant/staff/client management, scheduling, reservations, attendance, cash memberships, notifications, member self-service, the native member app, secure QR check-in and typed studio settings. PostgreSQL owns business invariants; StudioMember never means staff access. Card payments, production push and deployment remain separate work.
 
 ## Stack and requirements
 
@@ -83,3 +83,7 @@ GT-011 member accounts and responsive self-service are implemented. See [identit
 GT-012 adds the iOS/Android member app in `apps/mobile`. See [mobile setup and contracts](docs/mobile/overview.md). Run `pnpm mobile:check` alongside the established repository checks. Native signing/device execution and production push delivery require separately configured environments.
 
 GT-013 adds secure member QR check-in, contextual native scanning and a polling trainer attendance roster. See [the secure check-in contract](docs/domain/secure-check-in.md) for operation and limitations.
+
+## GT-014 studio settings
+
+GT-014 adds typed studio policies and responsive administration. Existing tenants retain their previous defaults without a settings row. See [settings catalog, API and operations](docs/domain/studio-settings.md) and [GT-014 verification](docs/development/gt-014-verification.md). Release hardening and deployment remain separate work.

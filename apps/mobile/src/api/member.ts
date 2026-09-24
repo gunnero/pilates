@@ -71,6 +71,16 @@ export class MemberApi {
     switch(org: string) {
         return this.client.request(`${this.base(org)}/switch`, 'POST', {});
     }
+    settings(org: string, signal?: AbortSignal) {
+        return this.client.request<{
+            data: {
+                self_check_in_enabled: boolean;
+                self_reservation_enabled: boolean;
+                self_cancellation_enabled: boolean;
+                locale: 'mk' | 'en';
+            };
+        }>(`${this.base(org)}/settings`, 'GET', undefined, signal);
+    }
     profile(org: string, signal?: AbortSignal) {
         return this.client.request<{ data: Profile }>(
             `${this.base(org)}/profile`,

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'policy' => 'This action is unavailable under the current studio policy. Please contact the studio.',
     'qr_expired' => 'This QR has expired. Scan the current display.',
     'too_early' => 'Check-in is not open yet.',
     'too_late' => 'Check-in has closed. Ask your trainer.',

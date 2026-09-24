@@ -13,8 +13,10 @@ use App\Models\TrainingSession;
 use App\Models\WaitingListEntry;
 use App\Support\Allocation;
 use App\Support\Audit;
+use App\Support\ReservationConflict;
 use App\Support\SelfService\Directory as D;
 use App\Support\SelfService\MemberContext;
+use App\Support\StudioSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +33,14 @@ final class MemberSelfServiceController
     private function page(LengthAwarePaginator $p, \Closure $represent): JsonResponse
     {
         return response()->json(['data' => array_map($represent, $p->items()), 'meta' => ['current_page' => $p->currentPage(), 'last_page' => $p->lastPage(), 'per_page' => $p->perPage(), 'total' => $p->total()]]);
+    }
+
+    public function settings(Request $r, string $organization): JsonResponse
+    {
+        $c = $this->context($r, $organization);
+        $policy = StudioSettings::forOrganization($c->organization);
+
+        return response()->json(['data' => array_intersect_key($policy->values(), array_flip(['self_reservation_enabled', 'self_cancellation_enabled', 'self_check_in_enabled', 'waiting_list_enabled', 'reservation_horizon_days', 'reservation_cutoff_minutes', 'cancellation_cutoff_minutes', 'check_in_early_minutes', 'check_in_late_minutes'])) + ['locale' => $c->member->preferred_locale ?? $c->organization->locale ?? config('app.locale')]]);
     }
 
     public function profile(Request $r, string $organization): JsonResponse
@@ -86,7 +96,9 @@ final class MemberSelfServiceController
             $q->where('status', 'scheduled')->where('starts_at', '>', now())->whereHas('group', fn ($q) => $q->where('status', 'active'))->whereHas('location', fn ($q) => $q->where('status', 'active'));
         }
 
-        return $this->page($q->orderBy('starts_at')->orderBy('id')->paginate($r->validated('per_page', 25)), D::session(...));
+        $policy = StudioSettings::forOrganization($c->organization);
+
+        return $this->page($q->orderBy('starts_at')->orderBy('id')->paginate($r->validated('per_page', 25)), fn ($s) => D::session($s, $policy));
     }
 
     public function session(Request $r, string $organization, string $session): JsonResponse
@@ -125,12 +137,20 @@ final class MemberSelfServiceController
         abort_unless($r->all() === [], 422);
         $waiting = $r->routeIs('self.waiting.cancel');
         MemberContext::mutate(MemberAccountController::actor($r), $organization, function (MemberContext $c) use ($reservation, $waiting) {
+            $policy = StudioSettings::forOrganization($c->organization);
+            if (! $policy->self_cancellation_enabled) {
+                throw new ReservationConflict('policy');
+            }
             if ($waiting) {
                 $w = WaitingListEntry::where('organization_id', $c->organization->id)->where('studio_member_id', $c->member->id)->where('public_id', $reservation)->firstOrFail();
                 Allocation::cancelWaiting($w, $c->user);
             } else {
                 $row = Reservation::where('organization_id', $c->organization->id)->where('studio_member_id', $c->member->id)->where('public_id', $reservation)->firstOrFail();
-                Allocation::cancel(Allocation::lock($row->session), $row, $c->user);
+                $s = Allocation::lock($row->session);
+                if ($row->status !== 'cancelled' && $s->starts_at->isFuture() && ! $policy->canCancel($s)) {
+                    throw new ReservationConflict('policy');
+                }
+                Allocation::cancel($s, $row, $c->user);
             }
         });
 
@@ -141,7 +161,8 @@ final class MemberSelfServiceController
     {
         $c = $this->context($r, $organization);
         $q = WaitingListEntry::where('organization_id', $c->organization->id)->where('studio_member_id', $c->member->id)->with('session');
-        $represent = fn ($w) => ['id' => $w->public_id, 'status' => $w->status, 'session_id' => $w->session->public_id, 'session_name' => $w->session->group_name, 'starts_at' => $w->session->starts_at->toISOString(), 'timezone' => $w->session->timezone, 'can_cancel' => $w->status === 'waiting'];
+        $policy = StudioSettings::forOrganization($c->organization);
+        $represent = fn ($w) => ['id' => $w->public_id, 'status' => $w->status, 'session_id' => $w->session->public_id, 'session_name' => $w->session->group_name, 'starts_at' => $w->session->starts_at->toISOString(), 'timezone' => $w->session->timezone, 'can_cancel' => $w->status === 'waiting' && $policy->self_cancellation_enabled];
         if ($waiting !== null) {
             return response()->json(['data' => $represent($q->where('public_id', $waiting)->firstOrFail())]);
         }

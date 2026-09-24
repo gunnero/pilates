@@ -85,3 +85,7 @@ The scoped `xcode>uuid: 11.1.1` override removes GHSA-w5hq-g745-h8pq while retai
 ## GT-013 camera check-in
 
 Home/Activity now include a contextual QR scanner using Expo Camera. The app strictly parses `GTQR1` envelopes, suppresses duplicate scan events, requires server confirmation and displays own QR history. Camera access is scoped to the focused foreground screen; no media or microphone capture is used. Permission denial and network ambiguity offer manual fallback or server attendance verification. See [secure check-in contract](../domain/secure-check-in.md). Trainer QR/roster management remains in responsive web.
+
+## GT-014 studio settings
+
+GT-014 retains server can_reserve/can_join_waiting/can_cancel authority and adds a tenant/account-scoped settings query to native check-in. It fails closed before camera use, refreshes on screen focus and supports manual refresh; app foreground query refresh remains in effect. A stale client still faces current server policy. Manual staff help remains available. No native settings administration is added. See [settings](../domain/studio-settings.md).

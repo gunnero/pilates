@@ -76,3 +76,7 @@ Lists cap per_page at 100 and page at 10000. Membership filters: member_id, stat
 FinanceMetrics returns active, expiring, outstanding (positive balance, including cancelled obligations), net cash today and month. Date boundaries use the organization timezone, then UTC timestamps. Net cash is attributed to the original paid_at period; a later reversal restates that period. These are live derived operational figures, not sealed accounting reports. No financial dashboard is built.
 
 The responsive Macedonian/English UI includes plans, directory filters, profile membership/amounts/history, assignment preview, cash confirmation (client, amount, period), reversal reason/confirmation and retained actor evidence. Plans and client membership histories paginate. Payment date is currently explicitly UTC. No custom-price discounts, prorations, credits/session-count packages, partial reversal, bank/card refunds, fiscal receipts, invoices, integrations, notifications or mobile payment/self-service is included. GT-010 was not started. Future notification work can use the central expiring query; it must add its own consent and delivery behavior.
+
+## GT-014 studio settings
+
+GT-014 only configures the expiring-membership display threshold (default seven days). It does not change entitlement, sold snapshots, membership periods, payments or reversals. Notification expiry warnings are separately configured. See [settings non-retroactivity](studio-settings.md).

@@ -95,3 +95,7 @@ Existing grants are unchanged. Explicitly adopt an active all-location owner/adm
 ## GT-010 notifications
 
 GT-010 operational commands and scheduler allowlist are documented in [notifications](../domain/notifications.md#database-and-operational-contract). Delivery polls durable PostgreSQL rows; no new Redis or external service is required. Enable only intended tenant UUIDs for scheduled generation. Do not log payloads or exception contents.
+
+## GT-014 studio settings
+
+GT-014 requires a private development backup and prior-table digest comparison before its additive migration; no reseed/grant updates are needed. The typed resolver needs no Redis flush. Run the complete backend/web/mobile/browser suite, with PHPUnit and Playwright sequential on guarded gt_test. See [verification](gt-014-verification.md).

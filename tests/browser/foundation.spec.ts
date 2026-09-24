@@ -187,8 +187,9 @@ test('real session authentication, CSRF, localization and responsive shell', asy
         await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('link', { name: /Settings/ }).click();
     await expect(page.getByLabel('Studio name')).toBeVisible();
-    await page.getByLabel('Timezone').fill('America/Toronto');
-    await page.getByRole('button', { name: 'Save changes' }).click();
+    await page.getByLabel('Timezone').selectOption('America/Toronto');
+    page.once('dialog', (dialog) => void dialog.accept());
+    await page.getByRole('button', { name: 'Save changes' }).first().click();
     await expect(page.getByRole('status')).toHaveText('Changes saved.');
     if (testInfo.project.name === 'mobile')
         await page.getByRole('button', { name: 'Open menu' }).click();

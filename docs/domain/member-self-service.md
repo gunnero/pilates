@@ -65,3 +65,7 @@ Rate limits reuse login/password/global API policies and add activation (10/IP/m
 ## Limits and deferrals
 
 No unlink/reassignment UI, login-email change, SMS, MFA, refresh-token rotation, native app, PWA, production push, cards, invoices or QR check-in UI. Member accounts do not imply self check-in authorization: attendance HTTP writes remain privileged. Invitations need a configured delivery transport outside local development; array mail acceptance is not evidence of real delivery. Permanent spots remain staff-managed. No membership payment/attendance mutations or staff permissions are exposed to members. Organization discovery and histories are paginated; the dashboard shows recent pages, not an unbounded full history.
+
+## GT-014 studio settings
+
+GT-014 adds a member-readable own-studio settings resource and enforces member reservation/cancellation/check-in policies on the server. List/detail action flags account for current policy; members gain no admin route or settings authority. Existing preferred locales remain intact; newly created members inherit the organization locale. See [settings](studio-settings.md).

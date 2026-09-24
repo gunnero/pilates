@@ -37,6 +37,9 @@ const organization: Organization = {
 const meta = { current_page: 1, last_page: 1, per_page: 25, total: 1 };
 beforeEach(async () => {
     vi.resetAllMocks();
+    vi.mocked(api.get).mockResolvedValue({
+        data: { effective: {}, overrides: {}, catalog: {} },
+    });
     await i18n.changeLanguage('mk');
 });
 it('renders locations and server validation on create without discarding form input', async () => {

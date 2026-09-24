@@ -24,7 +24,7 @@ class MemberMigrationTest extends TestCase
         $payment = $this->postJson("$base/cash-payments", $this->payData($id))->assertCreated()->json('data.id');
         $this->postJson("$base/cash-payments/$payment/reverse", ['reason' => 'wrong_amount'])->assertOk();
         Delivery::run(NotificationDelivery::firstOrFail()->id);
-        Artisan::call('migrate:rollback', ['--step' => 1, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
         $tables = ['users', 'organizations', 'locations', 'organization_memberships', 'membership_locations', 'studio_members', 'trainer_profiles', 'training_groups', 'schedule_rules', 'training_sessions', 'reservations', 'waiting_list_entries', 'permanent_spots', 'permanent_spot_releases', 'attendance_records', 'audit_events', 'membership_plans', 'member_memberships', 'cash_payments', 'payment_reversals', 'platform_notifications', 'notification_deliveries', 'notification_delivery_attempts', 'notification_reads', 'notification_preferences'];
         $before = [];
         foreach ($tables as $table) {

@@ -116,6 +116,7 @@ export class ApiClient {
                     if (
                         typeof candidate === 'string' &&
                         [
+                            'policy',
                             'qr_invalid',
                             'qr_expired',
                             'too_early',

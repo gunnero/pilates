@@ -18,6 +18,7 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ScheduleRuleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudioMemberController;
+use App\Http\Controllers\StudioSettingsController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\TrainingGroupController;
 use App\Http\Controllers\TrainingSessionController;
@@ -38,6 +39,7 @@ Route::prefix('v1/member')->middleware(['auth:sanctum', 'throttle:api'])->group(
     Route::post('/tokens/revoke', [MemberAccountController::class, 'revokeTokens'])->middleware('throttle:member-write');
     Route::prefix('organizations/{organization}')->whereUuid('organization')->group(function (): void {
         Route::post('/switch', [MemberAccountController::class, 'switch'])->middleware('throttle:member-write');
+        Route::get('/settings', [MemberSelfServiceController::class, 'settings']);
         Route::get('/profile', [MemberSelfServiceController::class, 'profile']);
         Route::patch('/profile', [MemberSelfServiceController::class, 'updateProfile'])->middleware('throttle:member-write');
         Route::get('/groups', [MemberSelfServiceController::class, 'groups']);
@@ -101,6 +103,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::post('/cash-payments', [FinanceController::class, 'pay'])->middleware(['can:payments.view', 'can:payments.record']);
         Route::get('/cash-payments/{payment}', [FinanceController::class, 'payment'])->whereUuid('payment')->middleware('can:payments.view');
         Route::post('/cash-payments/{payment}/reverse', [FinanceController::class, 'reverse'])->whereUuid('payment')->name('cash.reverse')->middleware(['can:payments.view', 'can:payments.correct']);
+        Route::get('/settings', [StudioSettingsController::class, 'show'])->middleware('can:organizations.view');
+        Route::patch('/settings', [StudioSettingsController::class, 'update'])->middleware(['can:organizations.manage', 'throttle:member-write']);
         Route::get('/context', OrganizationContextController::class);
         Route::post('/switch', [OrganizationController::class, 'switch']);
         Route::get('/', [OrganizationController::class, 'show'])->middleware('can:organizations.view');

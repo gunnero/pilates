@@ -21,9 +21,11 @@ import { parseCheckIn } from '../check-in/parse';
 import { ApiError } from '../api/client';
 import type { CheckInResult } from '../api/types';
 import type { Routes } from '../navigation/types';
+import { useMemberQuery } from '../hooks/member';
 import { memberKey } from '../hooks/cache';
 import { dateTime } from '../utils/format';
 const reasons: Record<string, TextKey> = {
+    policy: 'policyDisabled',
     qr_invalid: 'qr_invalid',
     qr_expired: 'qr_expired',
     too_early: 'too_early',
@@ -41,6 +43,14 @@ export function CheckIn() {
     const navigation = useNavigation<NativeStackNavigationProp<Routes>>();
     const cache = useQueryClient();
     const focused = useIsFocused();
+    const policy = useMemberQuery(['settings'], (signal) =>
+        api.settings(organization.id, signal),
+    );
+    const enabled = policy.data?.data.self_check_in_enabled === true;
+    const refresh = policy.refetch;
+    useEffect(() => {
+        if (focused) void refresh();
+    }, [focused, refresh]);
     const [active, setActive] = useState(AppState.currentState === 'active');
     const [permission, requestPermission] = useCameraPermissions();
     const [cameraFailed, setCameraFailed] = useState(false);
@@ -65,7 +75,14 @@ export function CheckIn() {
         };
     }, []);
     async function scan(raw: string) {
-        if (!alive.current || locked.current || !focused || !active || !started)
+        if (
+            !alive.current ||
+            locked.current ||
+            !focused ||
+            !active ||
+            !started ||
+            !enabled
+        )
             return;
         locked.current = true;
         setStarted(false);
@@ -108,6 +125,12 @@ export function CheckIn() {
     return (
         <Screen>
             <Heading>{t('checkIn')}</Heading>
+            {policy.isPending && <Loading />}
+            <ErrorMessage error={policy.error} />
+            {policy.data?.data.self_check_in_enabled === false && (
+                <Body>{t('policyDisabled')}</Body>
+            )}
+            <Button label={t('refresh')} onPress={() => void refresh()} />
             <Body>{t('cameraWhy')}</Body>
             <Body>{t('cameraFallback')}</Body>
             {busy && (
@@ -156,7 +179,8 @@ export function CheckIn() {
                     }
                 />
             )}
-            {started &&
+            {enabled &&
+                started &&
                 permission?.granted &&
                 focused &&
                 active &&
@@ -172,7 +196,8 @@ export function CheckIn() {
                         }}
                     />
                 )}
-            {!started &&
+            {enabled &&
+                !started &&
                 !busy &&
                 !cameraFailed &&
                 !ambiguous &&

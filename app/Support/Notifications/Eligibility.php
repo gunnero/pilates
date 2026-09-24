@@ -8,12 +8,13 @@ use App\Support\MembershipStatus;
 use App\Support\MemberStatus;
 use App\Support\OrganizationStatus;
 use App\Support\SessionDirectory;
+use App\Support\StudioSettings;
 use Illuminate\Support\Facades\DB;
 
 final class Eligibility
 {
     /** @param array<string,array<string,bool>>|null $preferences */
-    public static function reason(PlatformNotification $n, ?array $preferences = null): ?string
+    public static function reason(PlatformNotification $n, ?array $preferences = null, ?StudioSettings $policy = null): ?string
     {
         $org = $n->organization;
         if ($org->status !== OrganizationStatus::Active) {
@@ -37,6 +38,10 @@ final class Eligibility
         }
         $type = NotificationType::from($n->type);
         if ($type->optional()) {
+            $policy ??= StudioSettings::forOrganization($org);
+            if ($type === NotificationType::SessionReminder ? ! $policy->session_reminders_enabled : ! $policy->expiry_warnings_enabled) {
+                return 'preference';
+            }
             $field = $type === NotificationType::SessionReminder ? 'reminders_enabled' : 'expiry_reminders_enabled';
             $preference = $preferences === null ? DB::table('notification_preferences')->where('organization_id', $org->id)->where('recipient_key', $n->recipient_key)->value($field) : ($preferences[$n->recipient_key][$field] ?? true);
             if ($preference === false) {

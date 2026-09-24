@@ -17,6 +17,7 @@ use App\Support\FinanceMetrics;
 use App\Support\MembershipPeriod;
 use App\Support\Permission;
 use App\Support\ReservationDirectory;
+use App\Support\StudioSettings;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -90,7 +91,7 @@ final class FinanceController
                 $q->where('starts_on', '<=', $today)->where('ends_on', '>=', $today);
             }
             if ($state === 'expiring') {
-                $q->where('ends_on', '<=', now($c->organization()->timezone)->addDays(MembershipPeriod::EXPIRING_DAYS)->toDateString());
+                $q->where('ends_on', '<=', now($c->organization()->timezone)->addDays(StudioSettings::forOrganization($c->organization())->membership_expiring_days)->toDateString());
             }
             if ($state === 'expired') {
                 $q->where('ends_on', '<', $today);

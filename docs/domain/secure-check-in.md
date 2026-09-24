@@ -41,3 +41,7 @@ Member check-in: 20 attempts/minute/account and 300/minute/source IP, plus exist
 There is no new background job, cleanup table, migration or production setting. Existing PostgreSQL attendance uniqueness, tenant-qualified foreign keys, state/time constraints, reservation capacity protection and organization/session lock order remain authoritative. Tests use real competing PostgreSQL processes; race credentials are sent over stdin, not process arguments.
 
 GT-014 may introduce authorized configuration for check-in windows, credential TTL, rotation and rate limits with validated bounds. No GT-014 implementation is included. Push delivery, GPS/proximity assurance, offline attendance, member walk-in creation, biometric identity, BLE/NFC and anti-relay hardware are deferred. Native camera execution on physical devices still requires an iOS/Android runtime; automated camera-adapter tests and real API/browser flows do not establish device camera compatibility.
+
+## GT-014 studio settings
+
+GT-014 makes member windows, TTL (30–90 seconds) and rotation (10–30 seconds, at most half TTL) tenant-configurable. Existing 30/30-minute, 90/30-second defaults remain. Previously issued credentials retain their signed expiration but must satisfy current enabled/window policy. Native scanning checks current settings before showing camera controls; the API remains authoritative. See [settings](studio-settings.md).

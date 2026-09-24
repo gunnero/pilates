@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Support\Audit;
 use App\Support\Notifications\Eligibility;
 use App\Support\Notifications\RecipientAccess;
+use App\Support\StudioSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,9 @@ final class NotificationController
         $preferences = DB::table('notification_preferences')->where('organization_id', $scope->organization->id)->whereIn('recipient_key', array_filter([$scope->member === null ? null : 'member:'.$scope->member->id, $scope->staff === null ? null : 'staff:'.$scope->staff->id]))->get()->mapWithKeys(fn ($p) => [$p->recipient_key => ['reminders_enabled' => $p->reminders_enabled, 'expiry_reminders_enabled' => $p->expiry_reminders_enabled]])->all();
         $page = $q->orderByDesc('id')->paginate($r->validated('per_page', 25));
 
-        return response()->json(['data' => $page->getCollection()->map(fn ($n) => $this->represent($n, $preferences)), 'unread_count' => $unread, 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total(), 'per_page' => $page->perPage()]]);
+        $policy = StudioSettings::forOrganization($scope->organization);
+
+        return response()->json(['data' => $page->getCollection()->map(fn ($n) => $this->represent($n, $preferences, $policy)), 'unread_count' => $unread, 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total(), 'per_page' => $page->perPage()]]);
     }
 
     public function show(Request $r, string $organization, string $notification): JsonResponse
@@ -124,10 +127,10 @@ final class NotificationController
      * @param  array<string,array<string,bool>>|null  $preferences
      * @return array<string,mixed>
      */
-    private function represent(PlatformNotification $n, ?array $preferences = null): array
+    private function represent(PlatformNotification $n, ?array $preferences = null, ?StudioSettings $policy = null): array
     {
         $locale = app()->getLocale() === 'en' ? 'en' : 'mk';
 
-        return ['id' => $n->public_id, 'type' => $n->type, 'title' => $n->getAttribute('title_'.$locale), 'message' => $n->getAttribute('message_'.$locale), 'metadata' => $n->metadata, 'created_at' => $n->created_at->toISOString(), 'read_at' => $n->getAttribute('read_at'), 'channel' => 'in_app', 'delivery_state' => 'delivered', 'current' => Eligibility::reason($n, $preferences) === null];
+        return ['id' => $n->public_id, 'type' => $n->type, 'title' => $n->getAttribute('title_'.$locale), 'message' => $n->getAttribute('message_'.$locale), 'metadata' => $n->metadata, 'created_at' => $n->created_at->toISOString(), 'read_at' => $n->getAttribute('read_at'), 'channel' => 'in_app', 'delivery_state' => 'delivered', 'current' => Eligibility::reason($n, $preferences, $policy) === null];
     }
 }
