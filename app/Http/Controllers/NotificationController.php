@@ -12,6 +12,8 @@ use App\Models\StudioMember;
 use App\Models\User;
 use App\Support\Audit;
 use App\Support\Notifications\Eligibility;
+use App\Support\Notifications\NotificationType;
+use App\Support\Notifications\Preferences;
 use App\Support\Notifications\RecipientAccess;
 use App\Support\StudioSettings;
 use Illuminate\Http\JsonResponse;
@@ -53,13 +55,34 @@ final class NotificationController
             $q->whereNotExists(fn ($q) => $q->selectRaw('1')->from('notification_reads')->whereColumn('platform_notification_id', 'platform_notifications.id'));
         }
         $q->select('platform_notifications.*')->selectSub(DB::table('notification_reads')->select('read_at')->whereColumn('platform_notification_id', 'platform_notifications.id'), 'read_at');
-        $q->with(['organization', 'member', 'staff.locations', 'session.group', 'session.location', 'session.trainer.membership.locations', 'reservation', 'membership', 'cash.reversal', 'attendance']);
-        $preferences = DB::table('notification_preferences')->where('organization_id', $scope->organization->id)->whereIn('recipient_key', array_filter([$scope->member === null ? null : 'member:'.$scope->member->id, $scope->staff === null ? null : 'staff:'.$scope->staff->id]))->get()->mapWithKeys(fn ($p) => [$p->recipient_key => ['reminders_enabled' => $p->reminders_enabled, 'expiry_reminders_enabled' => $p->expiry_reminders_enabled]])->all();
+        $q->with(['waitingEntry', 'announcement', 'organization', 'member', 'staff.locations', 'session.group', 'session.location', 'session.trainer.membership.locations', 'reservation', 'membership', 'cash.reversal', 'attendance']);
+        $preferences = DB::table('notification_preferences')->where('organization_id', $scope->organization->id)->whereIn('recipient_key', array_filter([$scope->member === null ? null : 'member:'.$scope->member->id, $scope->staff === null ? null : 'staff:'.$scope->staff->id]))->get()->mapWithKeys(fn ($p) => [$p->recipient_key => ['reminders_enabled' => $p->reminders_enabled, 'expiry_reminders_enabled' => $p->expiry_reminders_enabled, 'announcements_enabled' => $p->announcements_enabled]])->all();
         $page = $q->orderByDesc('id')->paginate($r->validated('per_page', 25));
 
         $policy = StudioSettings::forOrganization($scope->organization);
 
         return response()->json(['data' => $page->getCollection()->map(fn ($n) => $this->represent($n, $preferences, $policy)), 'unread_count' => $unread, 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total(), 'per_page' => $page->perPage()]]);
+    }
+
+    public function unread(Request $r, string $organization): JsonResponse
+    {
+        $q = RecipientAccess::resolve($this->actor($r), $organization)->query();
+
+        return response()->json(['data' => ['unread_count' => $q->whereNotExists(fn ($q) => $q->selectRaw('1')->from('notification_reads')->whereColumn('platform_notification_id', 'platform_notifications.id'))->count()]]);
+    }
+
+    public function readAll(Request $r, string $organization): JsonResponse
+    {
+        abort_unless($r->all() === [], 422);
+        $count = DB::transaction(function () use ($r, $organization) {
+            Organization::where('public_id', $organization)->lockForUpdate()->firstOrFail();
+            $scope = RecipientAccess::resolve($this->actor($r), $organization, true);
+            $query = $scope->query()->whereNotExists(fn ($q) => $q->selectRaw('1')->from('notification_reads')->whereColumn('platform_notification_id', 'platform_notifications.id'))->selectRaw('platform_notifications.organization_id, platform_notifications.id, CURRENT_TIMESTAMP');
+
+            return DB::table('notification_reads')->insertUsing(['organization_id', 'platform_notification_id', 'read_at'], $query);
+        }, 3);
+
+        return response()->json(['data' => ['marked_read' => $count]]);
     }
 
     public function show(Request $r, string $organization, string $notification): JsonResponse
@@ -93,9 +116,8 @@ final class NotificationController
     public function preferences(Request $r, string $organization): JsonResponse
     {
         $scope = RecipientAccess::resolve($this->actor($r), $organization);
-        $p = DB::table('notification_preferences')->where($scope->preferenceIdentity())->first();
 
-        return response()->json(['data' => ['reminders_enabled' => $p->reminders_enabled ?? true, 'expiry_reminders_enabled' => $p->expiry_reminders_enabled ?? true]]);
+        return response()->json(['data' => Preferences::effective($scope->preferenceIdentity())]);
     }
 
     public function savePreferences(NotificationPreferenceRequest $r, string $organization): JsonResponse
@@ -106,8 +128,8 @@ final class NotificationController
             $scope = RecipientAccess::resolve($u, $organization, true);
             $identity = $scope->preferenceIdentity();
             $p = DB::table('notification_preferences')->where($identity)->first();
-            $before = ['reminders_enabled' => $p->reminders_enabled ?? true, 'expiry_reminders_enabled' => $p->expiry_reminders_enabled ?? true];
-            $after = $r->validated();
+            $before = Preferences::effective($identity);
+            $after = array_replace($before, $r->validated());
             if ($before === $after) {
                 return;
             }
@@ -131,6 +153,6 @@ final class NotificationController
     {
         $locale = app()->getLocale() === 'en' ? 'en' : 'mk';
 
-        return ['id' => $n->public_id, 'type' => $n->type, 'title' => $n->getAttribute('title_'.$locale), 'message' => $n->getAttribute('message_'.$locale), 'metadata' => $n->metadata, 'created_at' => $n->created_at->toISOString(), 'read_at' => $n->getAttribute('read_at'), 'channel' => 'in_app', 'delivery_state' => 'delivered', 'current' => Eligibility::reason($n, $preferences, $policy) === null];
+        return ['id' => $n->public_id, 'type' => $n->type, 'expires_at' => $n->announcement?->expires_at?->toISOString(), 'category' => NotificationType::from($n->type)->category(), 'priority' => NotificationType::from($n->type)->priority(), 'locale' => $locale, 'destination' => $n->studio_member_id === null ? null : ($n->training_session_id !== null ? ['kind' => 'session', 'id' => $n->session?->public_id] : ($n->member_membership_id !== null ? ['kind' => 'membership', 'id' => $n->membership?->public_id] : null)), 'title' => $n->getAttribute('title_'.$locale), 'message' => $n->getAttribute('message_'.$locale), 'metadata' => $n->metadata, 'created_at' => $n->created_at->toISOString(), 'read_at' => $n->getAttribute('read_at'), 'channel' => 'in_app', 'delivery_state' => 'delivered', 'current' => Eligibility::reason($n, $preferences, $policy) === null];
     }
 }

@@ -87,3 +87,7 @@ GT-013 adds secure member QR check-in, contextual native scanning and a polling 
 ## GT-014 studio settings
 
 GT-014 adds typed studio policies and responsive administration. Existing tenants retain their previous defaults without a settings row. See [settings catalog, API and operations](docs/domain/studio-settings.md) and [GT-014 verification](docs/development/gt-014-verification.md). Release hardening and deployment remain separate work.
+
+## GT-015 communication engine
+
+GT-015 extends the existing inbox with channel preferences, account-bound native device registration, Expo ticket/receipt delivery, Laravel mail architecture, queued announcements and durable worker recovery. See [domain/API contracts](docs/domain/communication-engine.md), [worker operations](docs/operations/notifications.md) and [completion evidence](docs/tasks/GT-015_COMPLETION.md). External providers are disabled locally; nothing is deployed or pushed.

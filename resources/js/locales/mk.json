@@ -519,5 +519,21 @@
         "expiry_warnings_enabled": "Предупредувања за истекување на членство",
         "expiry_warning_days": "Предупредување пред истекување (денови)",
         "membership_expiring_days": "Приказ на членства пред истекување (денови)"
+    },
+    "communication": {
+        "session_changes_enabled": "Промени на термини",
+        "waiting_updates_enabled": "Листа на чекање",
+        "announcements_enabled": "Известувања од студиото",
+        "push_enabled": "Push известувања",
+        "email_enabled": "Известувања по е-пошта",
+        "readAll": "Означи ги сите како прочитани",
+        "announcementHelp": "Испратете текстуално известување до активните членови. Испораката се врши во заднина.",
+        "title": "Наслов",
+        "message": "Порака",
+        "publish": "Закажи известување",
+        "pending": "Во ред",
+        "complete": "Примателите се обработени",
+        "cancelled": "Откажано",
+        "recipients": "Приматели"
     }
 }

@@ -519,5 +519,21 @@
         "expiry_warnings_enabled": "Membership expiry warnings",
         "expiry_warning_days": "Membership expiry warning (days)",
         "membership_expiring_days": "Expiring membership display (days)"
+    },
+    "communication": {
+        "session_changes_enabled": "Session changes",
+        "waiting_updates_enabled": "Waiting-list updates",
+        "announcements_enabled": "Studio announcements",
+        "push_enabled": "Push notifications",
+        "email_enabled": "Email notifications",
+        "readAll": "Mark all as read",
+        "announcementHelp": "Send a plain-text announcement to active studio members. Delivery runs in the background.",
+        "title": "Title",
+        "message": "Message",
+        "publish": "Queue announcement",
+        "pending": "Queued",
+        "complete": "Recipients processed",
+        "cancelled": "Cancelled",
+        "recipients": "Recipients"
     }
 }

@@ -52,3 +52,7 @@ GT-013 QR redemption reuses the transactional `attendance.marked` evidence with 
 ## GT-014 studio settings
 
 GT-014 records studio.settings_changed against the organization, with changed nullable overrides and effective before/after values, actor and UTC time in the same transaction. Keys and values come from a finite typed catalog; no PII/secrets or QR credentials are included. No-op updates and reads do not add events. See [settings](../domain/studio-settings.md).
+
+## GT-015 communication audit
+
+Device registration/revocation and announcement creation/cancellation record actor, organization and safe public subject identifiers under the same organization-locked transaction. Preference updates record effective boolean before/after values. Raw tokens, announcement text and member contact data are excluded. Automated delivery retry/failure evidence belongs to delivery/attempt/receipt rows and finite operational logs; GT-015 stops adding those automated events to business audit without modifying existing evidence.

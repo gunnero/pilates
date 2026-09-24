@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\DevicePushController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberAccountController;
@@ -39,6 +41,8 @@ Route::prefix('v1/member')->middleware(['auth:sanctum', 'throttle:api'])->group(
     Route::post('/tokens/revoke', [MemberAccountController::class, 'revokeTokens'])->middleware('throttle:member-write');
     Route::prefix('organizations/{organization}')->whereUuid('organization')->group(function (): void {
         Route::post('/switch', [MemberAccountController::class, 'switch'])->middleware('throttle:member-write');
+        Route::post('/devices', [DevicePushController::class, 'store'])->middleware('throttle:member-write');
+        Route::delete('/devices/{device}', [DevicePushController::class, 'destroy'])->whereUuid('device')->middleware('throttle:member-write');
         Route::get('/settings', [MemberSelfServiceController::class, 'settings']);
         Route::get('/profile', [MemberSelfServiceController::class, 'profile']);
         Route::patch('/profile', [MemberSelfServiceController::class, 'updateProfile'])->middleware('throttle:member-write');
@@ -67,6 +71,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     Route::get('/notification-contexts', [NotificationController::class, 'contexts']);
     Route::prefix('organizations/{organization}/notifications')->whereUuid('organization')->group(function (): void {
         Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unread']);
+        Route::post('/read-all', [NotificationController::class, 'readAll'])->middleware('throttle:member-write');
         Route::get('/preferences', [NotificationController::class, 'preferences']);
         Route::patch('/preferences', [NotificationController::class, 'savePreferences']);
         Route::post('/read', [NotificationController::class, 'read']);
@@ -74,6 +80,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::post('/{notification}/read', [NotificationController::class, 'read'])->whereUuid('notification');
     });
     Route::prefix('organizations/{organization}')->whereUuid('organization')->middleware([ResolveOrganization::class, 'can:studio.access'])->group(function (): void {
+        Route::get('/announcements', [AnnouncementController::class, 'index']);
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('throttle:member-write');
+        Route::post('/announcements/{announcement}/cancel', [AnnouncementController::class, 'cancel'])->whereUuid('announcement')->middleware('throttle:member-write');
         Route::get('/members/{member}/invitations', [MemberInvitationController::class, 'index'])->whereUuid('member');
         Route::post('/members/{member}/invitations', [MemberInvitationController::class, 'store'])->whereUuid('member')->middleware('throttle:member-write');
         Route::post('/member-invitations/{invitation}/revoke', [MemberInvitationController::class, 'revoke'])->whereUuid('invitation')->middleware('throttle:member-write');

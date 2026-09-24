@@ -137,6 +137,7 @@ final class Allocation
         }
         $w = new WaitingListEntry;
         $w->forceFill(['organization_id' => $s->organization_id, 'training_session_id' => $s->id, 'studio_member_id' => $m->id, 'source' => $source, 'status' => 'waiting', 'created_by' => $actor->id, 'joined_at' => now()])->save();
+        Events::waiting($w, NotificationType::WaitingJoined);
         Audit::record(Organization::findOrFail($s->organization_id), $actor, 'waiting_list.joined', 'waiting_list_entry', $w->public_id, ['session_id' => $s->public_id]);
 
         return ['outcome' => 'waitlisted', 'reservation' => null, 'waiting_entry' => $w];

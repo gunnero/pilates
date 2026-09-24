@@ -61,3 +61,7 @@ The web settings page groups General, Reservations, Attendance & Check-In, Notif
 The additive migration creates only studio_settings; it backfills no defaults and changes no grants. Back up before applying and compare prior-table digests. Rollback drops only the override table, restoring default operational behavior; review rollback impact because audit evidence remains. No cache flush is required. Inspect settings through authorized APIs; do not log settings request bodies or credentials. Usual audit and notification command counts supply operational evidence.
 
 Intentionally NOT configurable: authentication/tenant ownership, staff permissions, capacity/FIFO/active uniqueness, attendance correction authority, reservation/present-attendance protections, QR crypto/binding/hard 90-second maximum, input size/type guards, immutable audit/financial history, scheduler batch limits, arbitrary cron, push providers, currency/payment mechanisms, translations, secrets or signing keys. Deployment, native physical-device proof, production providers and release hardening remain separate work.
+
+## GT-015 communication integration
+
+GT-015 continues to resolve reminder enablement, lead and expiry-warning policy here. Member channel/category preferences are recipient choices, not duplicate studio settings. Transport flags and provider credentials are operator configuration. No new studio policy fields or defaults are added.

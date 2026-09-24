@@ -89,3 +89,7 @@ Home/Activity now include a contextual QR scanner using Expo Camera. The app str
 ## GT-014 studio settings
 
 GT-014 retains server can_reserve/can_join_waiting/can_cancel authority and adds a tenant/account-scoped settings query to native check-in. It fails closed before camera use, refreshes on screen focus and supports manual refresh; app foreground query refresh remains in effect. A stale client still faces current server policy. Manual staff help remains available. No native settings administration is added. See [settings](../domain/studio-settings.md).
+
+## GT-015 push registration and communication
+
+The earlier null push registry is replaced by an authenticated server adapter when `EXPO_PUBLIC_EAS_PROJECT_ID` is configured. Expo project-token acquisition, permission denial, token-change refresh, serialized registration, original-credential cleanup and account/organization-bound registration are implemented. A restored authorized permission refreshes registration; no configured project means no permission request. Only installation UUID and existing account credentials use SecureStore; no member query data is persisted. The native profile exposes all seven preferences; inbox includes mark-all-read and authoritative source navigation. See [communication security/limits](../domain/communication-engine.md), [worker/provider setup](../operations/notifications.md), and the GT-015 completion report. Physical push display remains unverified.

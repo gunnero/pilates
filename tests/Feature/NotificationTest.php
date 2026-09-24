@@ -118,7 +118,8 @@ class NotificationTest extends TestCase
         }
         $this->assertDatabaseCount('notification_delivery_attempts', 5);
         $this->assertDatabaseHas('notification_deliveries', ['state' => 'failed', 'attempts' => 5]);
-        $this->assertDatabaseHas('audit_events', ['action' => 'notification.delivery_failed']);
+        // GT-015 keeps automated failures in durable attempts and safe operational logs.
+        $this->assertDatabaseMissing('audit_events', ['action' => 'notification.delivery_failed']);
         $this->assertStringNotContainsString('secret provider error', json_encode(DB::table('audit_events')->get()));
     }
 
@@ -204,6 +205,6 @@ class NotificationTest extends TestCase
         [$o,$u,$a,$m,$recipient,$r] = $this->notificationFixture();
         $this->travelTo($r->session->starts_at);
         $this->postJson($this->base($o)."/sessions/{$r->session->public_id}/attendance", ['member_id' => $m->public_id, 'status' => 'present'])->assertOk();
-        $this->assertSame(0, PlatformNotification::where('type','attendance.result')->count());
+        $this->assertSame(0, PlatformNotification::where('type', 'attendance.result')->count());
     }
 }

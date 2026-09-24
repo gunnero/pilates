@@ -145,7 +145,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
 }
 
 $notificationFixtures = [];
-foreach (['desktop', 'mobile'] as $viewport) {
+foreach (['desktop', 'mobile', 'communication-desktop', 'communication-mobile'] as $viewport) {
     $org = Organization::create(['name' => 'Notification studio '.$viewport]);
     $actor = User::factory()->create(['name' => 'Notification owner', 'email' => 'notifications-staff-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
     $access = new OrganizationMembership;
@@ -202,7 +202,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     foreach (NotificationDelivery::where('organization_id', $org->id)->pluck('id') as $delivery) {
         Delivery::run($delivery);
     }
-    $notificationFixtures[$viewport] = ['organization' => $org->public_id];
+    $notificationFixtures[$viewport] = ['organization' => $org->public_id, 'session' => $s->public_id, 'starts_at' => $s->starts_at->toISOString(), 'ends_at' => $s->ends_at->toISOString()];
 }
 file_put_contents(base_path('.local/browser-notification-fixture.json'), json_encode($notificationFixtures, JSON_THROW_ON_ERROR));
 

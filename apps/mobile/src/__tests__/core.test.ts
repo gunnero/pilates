@@ -1,7 +1,7 @@
 import { ApiClient, ApiError, apiOrigin, pageQuery } from '../api/client';
 import { MemberApi } from '../api/member';
 import { SessionController } from '../auth/session';
-import { parseLink } from '../navigation/links';
+import { parseLink, parsePushLink } from '../navigation/links';
 import { DeviceLifecycle } from '../notifications/device';
 import { createCache, memberKey } from '../hooks/cache';
 import { en, mk } from '../locales/strings';
@@ -303,8 +303,9 @@ test('logout during push registration revokes the late registration', async () =
         registry,
     );
     const enabling = lifecycle.enable();
-    await Promise.resolve();
-    await Promise.resolve();
+    for (let i = 0; i < 20 && registry.register.mock.calls.length === 0; i++)
+        await Promise.resolve();
+    expect(registry.register).toHaveBeenCalledWith('late');
     await lifecycle.clear();
     wait.resolve();
     expect(await enabling).toBe('disabled');
@@ -364,4 +365,22 @@ test('leaving a studio clears private data and invalidates a pending selection',
     expect(controller.snapshot().organization).toBeNull();
     expect(controller.snapshot().account?.id).toBe('A');
     expect(cache.getQueryCache().getAll()).toHaveLength(0);
+});
+
+test('push navigation accepts only authorized domain route shapes, never account capabilities or URLs', () => {
+    expect(parsePushLink('https://example.test/notice')).toBeNull();
+    expect(parsePushLink({ url: 'gtstudio://notification' })).toBeNull();
+    expect(
+        parsePushLink(
+            'gtstudio://reset#email=member@example.test&token=' +
+                'a'.repeat(64),
+        ),
+    ).toBeNull();
+    const org = '01900000-0000-7000-8000-000000000002';
+    const id = '01900000-0000-7000-8000-000000000004';
+    expect(parsePushLink(`gtstudio://notification/${org}/${id}`)).toEqual({
+        kind: 'notification',
+        organization: org,
+        id,
+    });
 });

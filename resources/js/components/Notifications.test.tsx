@@ -138,3 +138,19 @@ it('updates optional reminder preferences', async () => {
         { ...prefs, reminders_enabled: false },
     );
 });
+it('saves channel preferences as a partial patch and marks all read', async () => {
+    const user = userEvent.setup();
+    render(<Inbox organization="org" />);
+    const push = await screen.findByLabelText('Push notifications');
+    await user.click(push);
+    expect(api.patch).toHaveBeenCalledWith(
+        '/api/v1/organizations/org/notifications/preferences',
+        { push_enabled: false },
+    );
+    await user.click(
+        await screen.findByRole('button', { name: 'Mark all as read' }),
+    );
+    expect(api.post).toHaveBeenCalledWith(
+        '/api/v1/organizations/org/notifications/read-all',
+    );
+});

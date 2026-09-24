@@ -37,6 +37,21 @@ final class Eligibility
             }
         }
         $type = NotificationType::from($n->type);
+        if ($type === NotificationType::StudioAnnouncement) {
+            $a = $n->announcement;
+
+            return $a !== null && $a->state !== 'cancelled' && $a->expires_at->isFuture() && ($preferences === null ? Preferences::permits($n, 'in_app') : ($preferences[$n->recipient_key]['announcements_enabled'] ?? true)) ? null : 'ineligible';
+        }
+        if (in_array($type, [NotificationType::WaitingJoined, NotificationType::WaitingExpired, NotificationType::WaitingSessionCancelled], true)) {
+            $entry = $n->waitingEntry;
+
+            $session = $n->session;
+            if ($type === NotificationType::WaitingSessionCancelled) {
+                return $entry !== null && $session?->status === 'cancelled' ? null : 'ineligible';
+            }
+
+            return $entry !== null && $session !== null && $session->status === 'scheduled' && $session->starts_at->isFuture() && Events::sessionFingerprint($session) === $n->source_fingerprint && ($type === NotificationType::WaitingJoined ? $entry->status === 'waiting' : in_array($entry->status, ['expired', 'missed'], true)) ? null : 'ineligible';
+        }
         if ($type->optional()) {
             $policy ??= StudioSettings::forOrganization($org);
             if ($type === NotificationType::SessionReminder ? ! $policy->session_reminders_enabled : ! $policy->expiry_warnings_enabled) {

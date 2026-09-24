@@ -5,8 +5,8 @@ namespace App\Support\Notifications;
 use App\Contracts\Notifications\DeliveryChannel;
 use App\Models\NotificationDelivery;
 use App\Models\Organization;
-use App\Support\Audit;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -24,7 +24,7 @@ final class Delivery
             }
             $org = Organization::whereKey($hint->organization_id)->lockForUpdate()->firstOrFail();
             $d = NotificationDelivery::whereKey($id)->lockForUpdate()->firstOrFail();
-            if (in_array($d->state, ['delivered', 'failed', 'suppressed'], true)) {
+            if (in_array($d->state, ['delivered', 'awaiting_receipt', 'failed', 'suppressed'], true)) {
                 return null;
             }
             if ($d->state === 'processing') {
@@ -37,11 +37,10 @@ final class Delivery
             }
             if ($d->attempts >= self::MAX_ATTEMPTS) {
                 self::finishState($d, 'failed', 'attempt_limit');
-                self::audit($org, $d, 'notification.delivery_failed', 'attempt_limit');
 
                 return 'failed';
             }
-            $reason = Eligibility::reason($d->notification);
+            $reason = ExternalChannels::reason($d);
             if ($reason !== null) {
                 self::finishState($d, 'suppressed', $reason);
 
@@ -60,7 +59,12 @@ final class Delivery
         }
         $error = null;
         try {
-            ($channel ?? new InAppChannel)->deliver($claim->notification, 'notification:'.$claim->notification->public_id.':in_app');
+            if ($claim->channel === 'in_app') {
+                ($channel ?? new InAppChannel)->deliver($claim->notification, 'notification:'.$claim->notification->public_id.':in_app');
+            } else {
+                $outcome = ExternalChannels::send($claim);
+                $error = $outcome === 'accepted' ? null : $outcome;
+            }
         } catch (Throwable) {
             $error = 'transient';
         }
@@ -71,14 +75,13 @@ final class Delivery
             if ($d->state !== 'processing' || $d->lease_token !== $claim->lease_token) {
                 return 'skipped';
             }
-            $reason = Eligibility::reason($d->notification);
-            $state = $reason !== null ? 'suppressed' : ($error === null ? 'delivered' : ($d->attempts >= self::MAX_ATTEMPTS ? 'failed' : 'retry'));
-            $code = $reason ?? $error;
+            $reason = ExternalChannels::reason($d);
+            $providerFailed = in_array($error, ['invalid_device', 'permanent'], true);
+            $state = $providerFailed ? 'failed' : ($reason !== null || in_array($error, ['disabled', 'ineligible'], true) ? 'suppressed' : ($error === null ? ($d->channel === 'push' ? 'awaiting_receipt' : 'delivered') : ($d->attempts >= self::MAX_ATTEMPTS ? 'failed' : 'retry')));
+            $code = $providerFailed ? $error : ($reason ?? $error);
             DB::table('notification_delivery_attempts')->where('notification_delivery_id', $d->id)->where('lease_token', $d->lease_token)->where('outcome', 'started')->update(['outcome' => $state, 'finished_at' => now(), 'error_code' => $code]);
             self::finishState($d, $state, $code);
-            if (in_array($state, ['retry', 'failed'], true)) {
-                self::audit($org, $d, $state === 'failed' ? 'notification.delivery_failed' : 'notification.delivery_retry', $code ?? 'transient');
-            }
+            DB::afterCommit(fn () => Log::info('notification.delivery', ['organization_id' => $org->id, 'delivery_id' => $d->id, 'channel' => $d->channel, 'state' => $state, 'attempt' => $d->attempts, 'code' => $code]));
 
             return $state;
         }, 3);
@@ -87,10 +90,5 @@ final class Delivery
     private static function finishState(NotificationDelivery $d, string $state, ?string $code): void
     {
         $d->forceFill(['state' => $state, 'lease_token' => null, 'lease_expires_at' => null, 'error_code' => $code, 'delivered_at' => $state === 'delivered' ? now() : null, 'next_attempt_at' => $state === 'retry' ? now()->addSeconds(min(3600, 60 * (2 ** ($d->attempts - 1)))) : now()])->save();
-    }
-
-    private static function audit(Organization $o, NotificationDelivery $d, string $action, string $code): void
-    {
-        Audit::record($o, null, $action, 'platform_notification', $d->notification->public_id, ['attempt' => $d->attempts, 'channel' => 'in_app', 'code' => $code]);
     }
 }

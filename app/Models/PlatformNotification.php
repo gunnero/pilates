@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $message_mk
  * @property string $message_en
  * @property array<string,string> $metadata
+ * @property-read WaitingListEntry|null $waitingEntry
+ * @property-read StudioAnnouncement|null $announcement
  * @property-read Organization $organization
  * @property-read StudioMember|null $member
  * @property-read OrganizationMembership|null $staff
@@ -55,7 +57,19 @@ class PlatformNotification extends Model
     /** @return HasOne<NotificationDelivery,$this> */
     public function delivery(): HasOne
     {
-        return $this->hasOne(NotificationDelivery::class);
+        return $this->hasOne(NotificationDelivery::class)->where('channel', 'in_app');
+    }
+
+    /** @return BelongsTo<WaitingListEntry,$this> */
+    public function waitingEntry(): BelongsTo
+    {
+        return $this->belongsTo(WaitingListEntry::class, 'waiting_list_entry_id');
+    }
+
+    /** @return BelongsTo<StudioAnnouncement,$this> */
+    public function announcement(): BelongsTo
+    {
+        return $this->belongsTo(StudioAnnouncement::class, 'announcement_id');
     }
 
     /** @return BelongsTo<Organization,$this> */

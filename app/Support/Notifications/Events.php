@@ -9,8 +9,10 @@ use App\Models\OrganizationMembership;
 use App\Models\PaymentReversal;
 use App\Models\PlatformNotification;
 use App\Models\Reservation;
+use App\Models\StudioAnnouncement;
 use App\Models\StudioMember;
 use App\Models\TrainingSession;
+use App\Models\WaitingListEntry;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -36,8 +38,11 @@ final class Events
             return $existing;
         }
         $n = new PlatformNotification;
-        $n->forceFill(Registry::payload($type, $metadata) + $references + ['organization_id' => $recipient->organization_id, $column => $recipient->id, 'event_key' => $eventKey])->save();
+        $n->forceFill($references + Registry::payload($type, $metadata) + ['organization_id' => $recipient->organization_id, $column => $recipient->id, 'event_key' => $eventKey])->save();
         DB::table('notification_deliveries')->insert(['organization_id' => $n->organization_id, 'platform_notification_id' => $n->id, 'next_attempt_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+
+        $n->setRelation($recipient instanceof StudioMember ? 'member' : 'staff', $recipient);
+        ExternalChannels::enqueue($n);
 
         return $n;
     }
@@ -51,6 +56,26 @@ final class Events
         $suffix = $eventId ?? ($type === NotificationType::SessionReminder ? $s->starts_at->toIso8601String() : 'once');
 
         return self::create($type, $r->member, $type->value.':'.$r->public_id.':'.$suffix, ['reservation_id' => $r->id, 'training_session_id' => $s->id, 'session_starts_at' => $s->starts_at, 'source_fingerprint' => self::sessionFingerprint($s)], ['date' => $s->local_date, 'time' => $s->starts_at->setTimezone($s->timezone)->format('H:i'), 'timezone' => $s->timezone]);
+    }
+
+    public static function announcement(StudioAnnouncement $a, StudioMember $member): PlatformNotification
+    {
+        if ($a->organization_id !== $member->organization_id) {
+            throw new LogicException('Foreign announcement recipient.');
+        }
+
+        return self::create(NotificationType::StudioAnnouncement, $member, 'studio.announcement:'.$a->public_id, ['announcement_id' => $a->id, 'title_mk' => $a->getAttribute('title_mk'), 'title_en' => $a->getAttribute('title_en'), 'message_mk' => $a->getAttribute('message_mk'), 'message_en' => $a->getAttribute('message_en')], []);
+    }
+
+    public static function waiting(WaitingListEntry $entry, NotificationType $type): PlatformNotification
+    {
+        if (! in_array($type, [NotificationType::WaitingJoined, NotificationType::WaitingExpired, NotificationType::WaitingSessionCancelled], true)) {
+            throw new LogicException('Invalid waiting event.');
+        }
+        $s = TrainingSession::findOrFail($entry->training_session_id);
+        $member = StudioMember::findOrFail($entry->studio_member_id);
+
+        return self::create($type, $member, $type->value.':'.$entry->public_id, ['waiting_list_entry_id' => $entry->id, 'training_session_id' => $s->id, 'session_starts_at' => $s->starts_at, 'source_fingerprint' => self::sessionFingerprint($s)], ['date' => $s->local_date, 'time' => $s->starts_at->setTimezone($s->timezone)->format('H:i'), 'timezone' => $s->timezone]);
     }
 
     public static function membership(MemberMembership $m, NotificationType $type, ?string $suffix = null): PlatformNotification
@@ -86,6 +111,11 @@ final class Events
         // Session capacity bounds active recipients. No historical reservation fan-out.
         foreach (Reservation::query()->where('organization_id', $s->organization_id)->where('training_session_id', $s->id)->where('status', 'active')->with(['member', 'session'])->orderBy('id')->get() as $r) {
             self::reservation($r, $type, $eventId);
+        }
+        if ($cancelled) {
+            foreach (WaitingListEntry::where('organization_id', $s->organization_id)->where('training_session_id', $s->id)->where('status', 'waiting')->orderBy('id')->limit(1000)->get() as $entry) {
+                self::waiting($entry, NotificationType::WaitingSessionCancelled);
+            }
         }
         $staff = $s->trainer->membership;
         $type = $cancelled ? NotificationType::StaffSessionCancelled : NotificationType::StaffSessionChanged;

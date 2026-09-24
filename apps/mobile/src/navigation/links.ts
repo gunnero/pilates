@@ -43,3 +43,11 @@ export function parseLink(raw: string): MemberLink | null {
     }
     return null;
 }
+
+// Provider data is navigation-only; authentication capability links are never push destinations.
+export function parsePushLink(
+    raw: unknown,
+): Extract<MemberLink, { organization: string }> | null {
+    const link = typeof raw === 'string' ? parseLink(raw) : null;
+    return link && 'organization' in link ? link : null;
+}

@@ -24,7 +24,7 @@ class DeliverNotifications extends Command
         }
         $v = $v->validated();
         $ids = NotificationDelivery::query()->where(fn ($q) => $q->where(fn ($q) => $q->whereIn('state', ['pending', 'retry'])->where('next_attempt_at', '<=', now()))->orWhere(fn ($q) => $q->where('state', 'processing')->where('lease_expires_at', '<=', now())))->orderBy('next_attempt_at')->orderBy('id')->limit((int) $v['limit'])->pluck('id');
-        $counts = ['considered' => count($ids), 'delivered' => 0, 'retry' => 0, 'failed' => 0, 'suppressed' => 0, 'skipped' => 0, 'errors' => 0];
+        $counts = ['considered' => count($ids), 'delivered' => 0, 'awaiting_receipt' => 0, 'retry' => 0, 'failed' => 0, 'suppressed' => 0, 'skipped' => 0, 'errors' => 0];
         foreach ($ids as $id) {
             try {
                 $counts[Delivery::run($id)]++;

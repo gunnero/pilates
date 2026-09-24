@@ -4,4 +4,10 @@ cd "$(dirname "$0")/.."
 if [[ -d "$PWD/.local/browser-libs/usr/lib/x86_64-linux-gnu" ]]; then
     export LD_LIBRARY_PATH="$PWD/.local/browser-libs/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
+# Each viewport owns a fresh gt_test fixture/cache lifecycle. A shared loopback
+# login-IP bucket must not carry desktop traffic into the mobile project.
+if [[ $# -eq 0 ]]; then
+    pnpm exec playwright test --project=desktop
+    exec pnpm exec playwright test --project=mobile
+fi
 exec pnpm exec playwright test "$@"

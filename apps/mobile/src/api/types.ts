@@ -105,6 +105,7 @@ export type Payment = {
     reversal: { id: string; amount_minor: number; created_at: string } | null;
 };
 export type Notice = {
+    destination?: { kind: 'session' | 'membership'; id: string } | null;
     id: string;
     title: string;
     message: string;
@@ -113,6 +114,11 @@ export type Notice = {
     current: boolean;
 };
 export type Preferences = {
+    session_changes_enabled?: boolean;
+    waiting_updates_enabled?: boolean;
+    announcements_enabled?: boolean;
+    push_enabled?: boolean;
+    email_enabled?: boolean;
     reminders_enabled: boolean;
     expiry_reminders_enabled: boolean;
 };

@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Notifications\Preferences;
+
 class NotificationPreferenceRequest extends LifecycleRequest
 {
     public function rules(): array
     {
-        return ['reminders_enabled' => ['required', 'boolean:strict'], 'expiry_reminders_enabled' => ['required', 'boolean:strict']];
+        return array_fill_keys(array_keys(Preferences::DEFAULTS), ['sometimes', 'required', 'boolean:strict']);
     }
 }

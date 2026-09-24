@@ -24,15 +24,15 @@ class MemberMigrationTest extends TestCase
         $payment = $this->postJson("$base/cash-payments", $this->payData($id))->assertCreated()->json('data.id');
         $this->postJson("$base/cash-payments/$payment/reverse", ['reason' => 'wrong_amount'])->assertOk();
         Delivery::run(NotificationDelivery::firstOrFail()->id);
-        Artisan::call('migrate:rollback', ['--step' => 2, '--force' => true]);
+        Artisan::call('migrate:rollback', ['--step' => 3, '--force' => true]);
         $tables = ['users', 'organizations', 'locations', 'organization_memberships', 'membership_locations', 'studio_members', 'trainer_profiles', 'training_groups', 'schedule_rules', 'training_sessions', 'reservations', 'waiting_list_entries', 'permanent_spots', 'permanent_spot_releases', 'attendance_records', 'audit_events', 'membership_plans', 'member_memberships', 'cash_payments', 'payment_reversals', 'platform_notifications', 'notification_deliveries', 'notification_delivery_attempts', 'notification_reads', 'notification_preferences'];
         $before = [];
         foreach ($tables as $table) {
-            $before[$table] = DB::select('SELECT row_to_json(t)::text AS value FROM '.$table.' t ORDER BY row_to_json(t)::text');
+            $before[$table] = DB::select("SELECT (to_jsonb(t)-ARRAY['announcement_id','waiting_list_entry_id','device_push_token_id','destination_user_id','destination_key','session_changes_enabled','waiting_updates_enabled','announcements_enabled','push_enabled','email_enabled'])::text AS value FROM ".$table.' t ORDER BY row_to_json(t)::text');
         }
         $this->assertSame(0, Artisan::call('migrate', ['--force' => true]));
         foreach ($tables as $table) {
-            $this->assertEquals($before[$table], DB::select('SELECT row_to_json(t)::text AS value FROM '.$table.' t ORDER BY row_to_json(t)::text'), $table);
+            $this->assertEquals($before[$table], DB::select("SELECT (to_jsonb(t)-ARRAY['announcement_id','waiting_list_entry_id','device_push_token_id','destination_user_id','destination_key','session_changes_enabled','waiting_updates_enabled','announcements_enabled','push_enabled','email_enabled'])::text AS value FROM ".$table.' t ORDER BY row_to_json(t)::text'), $table);
         }
         $this->assertDatabaseCount('cash_payments', 1);
         $this->assertDatabaseCount('payment_reversals', 1);

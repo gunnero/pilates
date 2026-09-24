@@ -31,3 +31,5 @@ Read README.md and docs/architecture/overview.md before extending this foundatio
 - Mobile credentials belong only in native secure storage. Keep query data in bounded memory scoped by account and organization; clear on logout/switch. All member writes use the existing server API. Read docs/mobile/overview.md.
 
 - GT-013 secure member check-in reuses GT-008 Attendance under MemberContext and organization/session locks. Read docs/domain/secure-check-in.md. QR never grants identity, staff access, booking or capacity. Keep raw credentials out of logs; do not start GT-014.
+
+- GT-015 communication extends the existing notification outbox. Read docs/domain/communication-engine.md and docs/operations/notifications.md. Device token/account ownership is immutable; login revocation invalidates registrations. Provider calls run outside domain transactions; Expo tickets await receipts. Announcements require all-location organizations.manage. Never log tokens, provider bodies or announcement contents. Do not start GT-016 or deploy/push without authorization.

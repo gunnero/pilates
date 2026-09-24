@@ -1,4 +1,13 @@
 export const en = {
+    readAll: 'Mark all as read',
+    reminders_enabled: 'Session reminders',
+    expiry_reminders_enabled: 'Membership expiry',
+    session_changes_enabled: 'Session changes',
+    waiting_updates_enabled: 'Waiting-list updates',
+    announcements_enabled: 'Studio announcements',
+    push_enabled: 'Push notifications',
+    email_enabled: 'Email notifications',
+
     policyDisabled:
         'This action is disabled by your studio. Ask the studio team for help.',
     checkIn: 'Scan to check in',
@@ -175,6 +184,15 @@ export const en = {
 };
 export type TextKey = keyof typeof en;
 export const mk: Record<TextKey, string> = {
+    readAll: 'Означи ги сите како прочитани',
+    reminders_enabled: 'Потсетници за резервации',
+    expiry_reminders_enabled: 'Истек на членство',
+    session_changes_enabled: 'Промени на термини',
+    waiting_updates_enabled: 'Листа на чекање',
+    announcements_enabled: 'Известувања од студиото',
+    push_enabled: 'Push известувања',
+    email_enabled: 'Известувања по е-пошта',
+
     policyDisabled:
         'Ова дејство е оневозможено од студиото. Побарајте помош од персоналот.',
     checkIn: 'Скенирај за присуство',

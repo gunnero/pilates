@@ -34,14 +34,18 @@ import {
 } from './screens/Domain';
 import { CheckIn } from './screens/CheckIn';
 import { Profile } from './screens/Profile';
-import { parseLink, type MemberLink } from './navigation/links';
+import { parseLink, parsePushLink, type MemberLink } from './navigation/links';
 import type { Routes } from './navigation/types';
-import { device } from './notifications/native';
+import { bindDevice, device } from './notifications/native';
 const Stack = createNativeStackNavigator<Routes>();
 const navigation = createNavigationContainerRef<Routes>();
 function Flow() {
     const { controller, phase, account, organization } = useSession();
     const { t, locale, setLocale } = useLocale();
+    useEffect(() => {
+        if (!organization || !account) return;
+        return bindDevice(controller.api, organization.id);
+    }, [controller, organization, account]);
     const [link, setLink] = useState<MemberLink | null>(null);
     useEffect(() => {
         controller.api.client.setLocale(locale);
@@ -85,6 +89,10 @@ function Flow() {
         }
     });
     const rejectLink = useEffectEvent(() => Alert.alert(t('invalidLink')));
+    const receivePush = useEffectEvent((raw: unknown) => {
+        if (typeof raw === 'string' && parsePushLink(raw)) receive(raw);
+        else rejectLink();
+    });
     useEffect(() => {
         void Linking.getInitialURL()
             .then((url) => {
@@ -94,11 +102,24 @@ function Flow() {
         const subscription = Linking.addEventListener('url', ({ url }) =>
             receive(url),
         );
+        void Notifications.getLastNotificationResponseAsync()
+            .then((response) => {
+                if (response) {
+                    receivePush(
+                        response.notification.request.content.data?.url,
+                    );
+                    void Notifications.clearLastNotificationResponseAsync().catch(
+                        () => undefined,
+                    );
+                }
+            })
+            .catch(() => undefined);
         const push = Notifications.addNotificationResponseReceivedListener(
             (response) => {
-                const url = response.notification.request.content.data?.url;
-                if (typeof url === 'string') receive(url);
-                else rejectLink();
+                receivePush(response.notification.request.content.data?.url);
+                void Notifications.clearLastNotificationResponseAsync().catch(
+                    () => undefined,
+                );
             },
         );
         return () => {

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Announcements } from './Announcements';
 import { StudioPolicies } from './StudioPolicies';
 import { api, errorMessage, type Organization } from '../lib/api';
 export function OrganizationSettings({
@@ -118,6 +119,12 @@ export function OrganizationSettings({
                 )}
                 {saved && <p role="status">{t('saved')}</p>}
             </form>
+            {manage && (
+                <Announcements
+                    key={`announcements-${organization.id}`}
+                    organization={organization.id}
+                />
+            )}
             <StudioPolicies
                 key={organization.id}
                 organization={organization.id}

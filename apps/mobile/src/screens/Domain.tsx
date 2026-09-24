@@ -583,6 +583,17 @@ export function Inbox() {
                             }
                         />
                     )}{' '}
+                    {!!data.unread_count && (
+                        <Button
+                            label={t('readAll')}
+                            disabled={action.busy}
+                            onPress={() =>
+                                void action.run(() =>
+                                    api.readAll(organization.id),
+                                )
+                            }
+                        />
+                    )}
                     {data.data.length === 0 && <Body>{t('empty')}</Body>}
                     {data.data.map((n: Notice) => (
                         <Card key={n.id}>
@@ -613,6 +624,7 @@ export function NoticeDetail() {
     const { t } = useLocale();
     const { params } = useRoute<RouteProp<Routes, 'Notice'>>();
     const action = useAction();
+    const nav = useNav();
     const query = useMemberQuery(['notification', params.id], (signal) =>
         api.notice(organization.id, params.id, signal),
     );
@@ -625,6 +637,22 @@ export function NoticeDetail() {
                         <Body>{n.message}</Body>
                         {!n.current && <Body>{t('noticeOld')}</Body>}
                     </Card>
+                    {n.destination?.kind === 'session' && (
+                        <Button
+                            label={t('sessions')}
+                            onPress={() =>
+                                nav.navigate('Session', {
+                                    id: n.destination!.id,
+                                })
+                            }
+                        />
+                    )}
+                    {n.destination?.kind === 'membership' && (
+                        <Button
+                            label={t('memberships')}
+                            onPress={() => nav.navigate('Memberships')}
+                        />
+                    )}
                     <ActionFeedback action={action} />
                     {!n.read_at && (
                         <Button

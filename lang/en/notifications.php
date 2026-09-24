@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'waiting_session_cancelled' => ['title' => 'Waiting session cancelled', 'message' => 'The session you were waiting for on :date at :time was cancelled.'],
+    'studio_announcement' => ['title' => 'Studio announcement', 'message' => 'Open your inbox to read the studio announcement.'],
+    'waiting_joined' => ['title' => 'Waiting list joined', 'message' => 'You joined the waiting list for :date at :time.'],
+    'waiting_expired' => ['title' => 'Waiting list ended', 'message' => 'The waiting list for :date at :time has ended.'],
+
+    'push_title' => 'GT Studio',
+    'push_body' => 'You have a new notification. Open the app to view it.',
     'reservation_confirmed' => ['title' => 'Reservation confirmed', 'message' => 'Your place on :date at :time is confirmed.'],
     'reservation_cancelled' => ['title' => 'Reservation cancelled', 'message' => 'Your reservation on :date at :time was cancelled.'],
     'waiting_promoted' => ['title' => 'A place is yours', 'message' => 'You moved from the waiting list to a confirmed place on :date at :time.'],

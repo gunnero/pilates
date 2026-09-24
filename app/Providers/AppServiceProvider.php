@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Contracts\Accounts\InvitationDelivery;
+use App\Contracts\Notifications\PushProvider;
 use App\Models\User;
+use App\Support\Notifications\ExpoPushProvider;
 use App\Support\Permission;
 use App\Support\SelfService\MailInvitationDelivery;
 use App\Support\TenantContext;
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(PushProvider::class, ExpoPushProvider::class);
         $this->app->scoped(TenantContext::class);
         $this->app->bind(InvitationDelivery::class, MailInvitationDelivery::class);
     }

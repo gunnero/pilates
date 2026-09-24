@@ -151,3 +151,7 @@ GT-012 adds no production endpoint. The Expo app uses the GT-011 member routes a
 ## GT-014 studio settings
 
 GT-014 adds staff GET/PATCH organizations/{organization}/settings and member GET member/organizations/{organization}/settings. Staff routes require organizations.view/manage; the member route returns a finite own-studio subset. Strict JSON types, a 4 KiB PATCH limit, numeric bounds and unknown-key rejection apply. See [catalog and API](../domain/studio-settings.md).
+
+## GT-015 communication endpoints
+
+The notification prefix adds `/unread-count` and `/read-all`, and preferences accepts seven partial strict boolean fields. Member organization routes add POST `/devices` and DELETE `/devices/{device}`. Staff organization routes add announcement list/create/cancel with current all-location `organizations.manage`. Responses never contain push tokens/hashes or provider receipt IDs. See [full contracts](../domain/communication-engine.md).

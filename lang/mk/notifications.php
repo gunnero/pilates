@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'waiting_session_cancelled' => ['title' => 'Терминот е откажан', 'message' => 'Терминот за кој чекате на :date во :time е откажан.'],
+    'studio_announcement' => ['title' => 'Известување од студиото', 'message' => 'Отворете го сандачето за известувањето.'],
+    'waiting_joined' => ['title' => 'Листа на чекање', 'message' => 'На листата на чекање сте за :date во :time.'],
+    'waiting_expired' => ['title' => 'Чекањето заврши', 'message' => 'Листата на чекање за :date во :time заврши.'],
+
+    'push_title' => 'GT Студио',
+    'push_body' => 'Имате ново известување. Отворете ја апликацијата за детали.',
     'reservation_confirmed' => ['title' => 'Резервацијата е потврдена', 'message' => 'Вашето место на :date во :time е потврдено.'],
     'reservation_cancelled' => ['title' => 'Резервацијата е откажана', 'message' => 'Вашата резервација на :date во :time е откажана.'],
     'waiting_promoted' => ['title' => 'Добивте место', 'message' => 'Од листата на чекање добивте потврдено место на :date во :time.'],

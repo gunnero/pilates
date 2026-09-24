@@ -5,6 +5,7 @@ import { useAction, useMemberQuery } from '../hooks/member';
 import { useLocale } from '../locales/context';
 import { Body, Button, Card, Field } from '../components/ui';
 import { ActionFeedback, QueryScreen } from './Domain';
+import { ApiError } from '../api/client';
 import { device } from '../notifications/native';
 export function Profile() {
     const { api, organization, controller, account } = useMember();
@@ -70,17 +71,25 @@ export function Profile() {
                         [
                             'reminders_enabled',
                             'expiry_reminders_enabled',
+                            'session_changes_enabled',
+                            'waiting_updates_enabled',
+                            'announcements_enabled',
+                            'push_enabled',
+                            'email_enabled',
                         ] as const
                     ).map((key) => (
                         <Button
                             key={key}
-                            label={`${t(key === 'reminders_enabled' ? 'reminders' : 'expiryReminders')}: ${t(data.preferences[key] ? 'enabled' : 'disabled')}`}
+                            label={`${t(key)}: ${t((data.preferences[key] ?? key !== 'email_enabled') ? 'enabled' : 'disabled')}`}
                             disabled={action.busy}
                             onPress={() =>
                                 void action.run(() =>
                                     api.savePreferences(organization.id, {
                                         ...data.preferences,
-                                        [key]: !data.preferences[key],
+                                        [key]: !(
+                                            data.preferences[key] ??
+                                            key !== 'email_enabled'
+                                        ),
                                     }),
                                 )
                             }
@@ -102,7 +111,15 @@ export function Profile() {
                                         ),
                                     ),
                                 )
-                                .catch(() => setPush(t('network')))
+                                .catch((error: unknown) =>
+                                    setPush(
+                                        t(
+                                            error instanceof ApiError
+                                                ? error.kind
+                                                : 'network',
+                                        ),
+                                    ),
+                                )
                         }
                     />
                     {!!push && <Body>{push}</Body>}

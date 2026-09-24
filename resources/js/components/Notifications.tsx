@@ -12,6 +12,11 @@ type Notice = {
     current: boolean;
 };
 type Preferences = {
+    session_changes_enabled?: boolean;
+    waiting_updates_enabled?: boolean;
+    announcements_enabled?: boolean;
+    push_enabled?: boolean;
+    email_enabled?: boolean;
     reminders_enabled: boolean;
     expiry_reminders_enabled: boolean;
 };
@@ -233,6 +238,14 @@ export function Inbox({ organization }: { organization: string }) {
                             ))}
                         </ul>
                     )}
+                    <button
+                        disabled={busy || !result.unread_count}
+                        onClick={() =>
+                            void act(() => api.post(`${base}/read-all`))
+                        }
+                    >
+                        {t('communication.readAll')}
+                    </button>
                     <nav aria-label={t('notificationPages')}>
                         <button
                             disabled={busy || page <= 1}
@@ -293,6 +306,30 @@ export function Inbox({ organization }: { organization: string }) {
                         />
                         {t('notificationExpiry')}
                     </label>
+                    {(
+                        [
+                            'session_changes_enabled',
+                            'waiting_updates_enabled',
+                            'announcements_enabled',
+                            'push_enabled',
+                            'email_enabled',
+                        ] as const
+                    ).map((key) => (
+                        <label key={key}>
+                            <input
+                                type="checkbox"
+                                checked={prefs[key] ?? key !== 'email_enabled'}
+                                onChange={(e) =>
+                                    void act(() =>
+                                        api.patch(`${base}/preferences`, {
+                                            [key]: e.target.checked,
+                                        }),
+                                    )
+                                }
+                            />
+                            {t(`communication.${key}`)}
+                        </label>
+                    ))}
                     <p>{t('notificationRequired')}</p>
                 </fieldset>
             )}

@@ -72,3 +72,7 @@ Per-tenant organization locks trade throughput for consistency. Commands bound s
 ## GT-014 studio settings
 
 GT-014 moves reminder lead/expiry-warning defaults into the typed tenant resolver. Each candidate rechecks current settings after its organization lock. Optional delivery checks respect enablement; fixed batching/catch-up/retries and event deduplication keys remain. Disabled/suppressed or historical notices are never rewritten or resurrected by policy changes. See [settings](studio-settings.md).
+
+## GT-015 extension
+
+The sections above record GT-010/GT-014 behavior. GT-015 extends those same tables: multiple channel destinations, push receipt state, device ownership, five additional preference fields, waiting-list join notices and queued announcements. Automatic delivery attempts now belong to operational evidence/logs rather than new business audit events. The scheduler dispatches database-queue jobs. Read the current [communication contract](communication-engine.md) and [operations](../operations/notifications.md).

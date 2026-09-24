@@ -8,7 +8,7 @@ Current primitives: global User identity, Organization, Location, OrganizationMe
 
 See [organization lifecycle](organization-lifecycle.md) for state transitions, operator recovery, permission delegation and the PostgreSQL lock protocol.
 
-Use ordinary Laravel controllers, FormRequests, Gates, models and small support classes. Introduce domain directories/actions only when real business behavior requires them. New tenant-owned models must implement the tenant conventions before exposure. PostgreSQL is authoritative; Redis caches and rate limits can disappear without changing entitlement or financial truth. Database queues are configured but no application jobs exist.
+Use ordinary Laravel controllers, FormRequests, Gates, models and small support classes. Introduce domain directories/actions only when real business behavior requires them. New tenant-owned models must implement the tenant conventions before exposure. PostgreSQL is authoritative; Redis caches and rate limits can disappear without changing entitlement or financial truth. Database queues run bounded communication jobs introduced in GT-015.
 
 Native HP processes bind loopback. Development uses PHP's server on 8010 and Vite on 5173. Built frontend assets are served by Laravel; a later production release must use a reviewed HTTPS web server rooted at `public/`, proper PHP workers, migrations, backups, observability and least-privilege runtime credentials. None of that deployment has been performed.
 
@@ -43,3 +43,7 @@ Authenticated QR redemption resolves `MemberContext` under the organization lock
 ## GT-014 studio settings
 
 GT-014 centralizes operational defaults in a readonly typed StudioSettings resolver backed by optional, explicit PostgreSQL columns. Identity stays on Organization; writers resolve policy after the shared organization lock. Read [the settings contract](../domain/studio-settings.md).
+
+## GT-015 communication extension
+
+The existing GT-010 domain/outbox now owns in-app, push and email destinations. Native registrations are account/login/tenant bound; provider I/O stays outside organization transactions. Announcements fan out through bounded database-queue jobs, and Expo receipt processing distinguishes acceptance from provider handoff. Read [communication contracts](../domain/communication-engine.md) and [operations](../operations/notifications.md). Existing reservations, attendance, cash evidence and StudioSettings remain authoritative.

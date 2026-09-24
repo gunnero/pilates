@@ -177,3 +177,9 @@ Camera input, envelope routing hints and mobile clocks are untrusted. Laravel au
 ## GT-014 studio settings
 
 GT-014 adds an authorized organization policy boundary: strict known JSON fields and hard DB bounds prevent configuration injection; no generic config/secrets endpoint or shared cache exists. Policy and lifecycle writers share the organization lock. Critical review hypotheses are stale-policy booking/check-in/reminder races, QR lifetime weakening, unauthorized tenant mutations and timezone reinterpretation. Existing capacity/FIFO, crypto, permission and immutable-history boundaries remain fixed. See [settings](../domain/studio-settings.md) and [GT-014 review](gt-014-review.md).
+
+## GT-015 communication boundaries
+
+Device registration adds a native bearer-to-provider-token boundary. An immutable token digest owner, encrypted token storage, login FK revocation, organization/account advisory locks and current MemberContext prevent ownership reassignment. Provider payloads are generic; notification taps are navigation input and must fetch authenticated API state. Native cleanup binds the original credential and invalidates late registration work. Offline logout cannot prove remote revocation or retract an accepted external message.
+
+External delivery is outside the domain transaction, with PostgreSQL outbox identity, claims, leases, attempts and receipts remaining authoritative. Fixed Expo endpoints and sanitized failures keep provider input out of URLs/logs. Ticket acceptance is not delivery, and physical display is never inferred. SMTP/Expo crash boundaries are at-least-once. Studio announcement fan-out uses current all-location administrative authority, immutable bilingual text, tenant-qualified audience and bounded cursor batches. See [GT-015 review](gt-015-review.md) for captured scan scope and final manual delta coverage.

@@ -210,6 +210,13 @@ export class MemberApi {
             ids: ids.slice(0, 25).map(uuid),
         });
     }
+    readAll(org: string) {
+        return this.client.request(
+            `${this.inboxBase(org)}/read-all`,
+            'POST',
+            {},
+        );
+    }
     preferences(org: string, signal?: AbortSignal) {
         return this.client.request<{ data: Preferences }>(
             `${this.inboxBase(org)}/preferences`,
