@@ -139,3 +139,7 @@ GT-010 adds notification-contexts and organization-scoped notifications list/det
 ## GT-011 member self-service
 
 GT-011 versioned account/member API endpoints, pagination, field allowlists, timezone contracts and native authentication are documented in [member self-service](../domain/member-self-service.md). Existing notification endpoints are reused; financial and attendance endpoints are read-only.
+
+## GT-012 mobile consumption
+
+GT-012 adds no production endpoint. The Expo app uses the GT-011 member routes and existing recipient notification routes with bearer authentication, bounded 25-row pages, a 15-second timeout, no cookie transport and no automatic mutation replay. Device registration is intentionally disabled until a provider/backend boundary is implemented and reviewed. See [mobile contracts](../mobile/overview.md).

@@ -1,7 +1,9 @@
 <?php
 
 use App\Contracts\Accounts\InvitationDelivery;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 
 // Test-only HTTP entry point. Capture transient invitation delivery privately,
 // without adding a debug capability or secret-returning API to the application.
@@ -18,6 +20,12 @@ $app->booted(function () use ($app) {
     if (! $app->environment('e2e') || config('database.connections.pgsql.database') !== 'gt_test' || config('database.connections.pgsql.username') !== 'gt_test' || config('database.connections.pgsql.url') || ! in_array(config('database.connections.pgsql.host'), ['localhost', '127.0.0.1'], true)) {
         throw new RuntimeException('Isolated browser database required');
     }
+    ResetPassword::toMailUsing(function ($user, string $token) {
+        umask(0077);
+        file_put_contents(base_path('.local/browser-reset-'.hash('sha256', $user->email).'.json'), json_encode(['token' => $token], JSON_THROW_ON_ERROR));
+
+        return (new MailMessage)->line('Isolated test password reset');
+    });
     $app->instance(InvitationDelivery::class, new class implements InvitationDelivery
     {
         public function send(string $email, string $url, string $locale): void

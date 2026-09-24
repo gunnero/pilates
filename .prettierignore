@@ -12,3 +12,8 @@ pnpm-lock.yaml
 .phpunit.cache
 playwright-report
 test-results
+apps/mobile/.expo
+apps/mobile/dist
+apps/mobile/coverage
+apps/mobile/ios
+apps/mobile/android

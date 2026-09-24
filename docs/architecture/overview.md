@@ -31,3 +31,7 @@ GT-010 adds immutable tenant/recipient notification evidence and a durable polli
 ## GT-011 member self-service
 
 GT-011 adds optional account activation and member self-service using the same global User identity and existing StudioMember link. MemberContext resolves own tenant access separately from staff TenantContext. Reservations share Allocation; history is read-only. See [member self-service](../domain/member-self-service.md).
+
+## GT-012 native member application
+
+`apps/mobile` now implements the documented Expo/React Native direction, using the GT-011 member API and GT-010 inbox. A pnpm workspace preserves independent compatible web/native React versions. The server owns identity, allocation and all history; native state is a bounded account/studio-scoped memory cache and a platform-secured bearer. No backend schema, permissions or domain writers changed. See [mobile architecture and operations](../mobile/overview.md).

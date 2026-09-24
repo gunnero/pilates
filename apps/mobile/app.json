@@ -1,0 +1,16 @@
+{
+    "expo": {
+        "name": "GT Studio",
+        "slug": "gt-member",
+        "version": "0.1.0",
+        "scheme": "gtstudio",
+        "orientation": "default",
+        "userInterfaceStyle": "light",
+        "ios": {
+            "bundleIdentifier": "studio.gt.member",
+            "supportsTablet": false
+        },
+        "android": { "package": "studio.gt.member" },
+        "plugins": ["expo-secure-store", "expo-notifications"]
+    }
+}

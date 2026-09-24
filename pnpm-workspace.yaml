@@ -1,0 +1,14 @@
+packages:
+  - apps/mobile
+minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.27'
+  - '@expo/router-server@57.0.11'
+  - babel-preset-expo@57.0.13
+  - expo-modules-core@57.0.19
+  - expo-modules-jsi@57.1.1
+  - expo@57.0.25
+  - expo-linking@57.0.11
+  - expo-notifications@57.0.21
+# xcode uses only the CommonJS v4 API; 11.1.1 retains it and fixes GHSA-w5hq-g745-h8pq.
+overrides:
+  xcode>uuid: 11.1.1

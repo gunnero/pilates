@@ -206,7 +206,7 @@ file_put_contents(base_path('.local/browser-notification-fixture.json'), json_en
 
 // GT011 isolated account fixtures. Tokens are captured only by the guarded test router.
 $selfFixtures = [];
-foreach (['desktop', 'mobile'] as $viewport) {
+foreach (['desktop', 'mobile', 'native-desktop', 'native-mobile'] as $viewport) {
     $org = Organization::create(['name' => 'Member studio '.$viewport]);
     $actor = User::factory()->create(['name' => 'Member owner', 'email' => 'member-staff-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
     $access = new OrganizationMembership;

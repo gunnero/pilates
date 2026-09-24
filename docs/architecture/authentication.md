@@ -15,3 +15,7 @@ Sanctum personal access tokens and their hashed PostgreSQL storage are installed
 ## GT-011 member self-service
 
 GT-011 adds one-use hashed invitations, member web entry points and bounded Sanctum native-token issuance. Account advisory locks serialize password/reset consumption; password changes revoke database sessions and tokens atomically. See [authentication, custody and limitations](../domain/member-self-service.md).
+
+## GT-012 native consumer
+
+The mobile application consumes the existing member-auth token/activation/reset contracts. It verifies secure-store credentials before exposing data, clears caches on logout/401/studio switch, guards late responses with session epochs, and does not persist passwords or domain data. Offline logout cannot promise server revocation; the user is told that explicitly. Custom-scheme links are strict selectors/capability inputs, not authentication by themselves. See [mobile lifecycle](../mobile/overview.md).

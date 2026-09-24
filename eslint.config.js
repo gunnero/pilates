@@ -7,7 +7,12 @@ export default tseslint.config(
     {
         ignores: [
             'vendor/**',
-            'node_modules/**',
+            '**/node_modules/**',
+            'apps/mobile/dist/**',
+            'apps/mobile/.expo/**',
+            'apps/mobile/coverage/**',
+            'apps/mobile/android/**',
+            'apps/mobile/ios/**',
             'public/build/**',
             '.local/**',
             'storage/**',
@@ -16,6 +21,7 @@ export default tseslint.config(
             'test-results/**',
         ],
     },
+    { files: ['**/*.cjs'], languageOptions: { globals: globals.node } },
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {
@@ -29,5 +35,10 @@ export default tseslint.config(
                 { allowConstantExport: true },
             ],
         },
+    },
+    {
+        files: ['apps/mobile/**/*.{ts,tsx}'],
+        languageOptions: { globals: { ...globals.jest, __DEV__: 'readonly' } },
+        rules: { 'react-refresh/only-export-components': 'off' },
     },
 );

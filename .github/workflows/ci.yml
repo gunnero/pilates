@@ -44,6 +44,7 @@ jobs:
       - run: composer validate --strict
       - run: composer check
       - run: pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
+      - run: pnpm mobile:check
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
       - run: composer audit --locked
