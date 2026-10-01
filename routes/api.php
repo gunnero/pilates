@@ -12,6 +12,8 @@ use App\Http\Controllers\MemberCheckInController;
 use App\Http\Controllers\MemberInvitationController;
 use App\Http\Controllers\MemberSelfServiceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OperationsAccountController;
+use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OrganizationContextController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermanentSpotController;
@@ -26,6 +28,9 @@ use App\Http\Controllers\TrainingGroupController;
 use App\Http\Controllers\TrainingSessionController;
 use App\Http\Middleware\ResolveOrganization;
 use Illuminate\Support\Facades\Route;
+
+Route::post('v1/staff-auth/token', [OperationsAccountController::class, 'token'])->middleware('throttle:login');
+Route::get('v1/staff/account', [OperationsAccountController::class, 'contexts'])->middleware(['auth:sanctum', 'throttle:api']);
 
 Route::prefix('v1/member-auth')->group(function (): void {
     Route::post('/activate', [MemberInvitationController::class, 'activate'])->middleware('throttle:activation');
@@ -86,6 +91,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/members/{member}/invitations', [MemberInvitationController::class, 'index'])->whereUuid('member');
         Route::post('/members/{member}/invitations', [MemberInvitationController::class, 'store'])->whereUuid('member')->middleware('throttle:member-write');
         Route::post('/member-invitations/{invitation}/revoke', [MemberInvitationController::class, 'revoke'])->whereUuid('invitation')->middleware('throttle:member-write');
+        Route::prefix('operations')->middleware(['can:attendance.view', 'can:sessions.view'])->group(function (): void {
+            Route::get('/', [OperationsController::class, 'index']);
+            Route::post('/sessions/{session}/roster', [OperationsController::class, 'roster'])->whereUuid('session');
+            Route::get('/sessions/{session}/members/{member}', [OperationsController::class, 'profile'])->whereUuid(['session', 'member']);
+        });
         Route::get('/attendance/today', [AttendanceController::class, 'today'])->middleware(['can:attendance.view', 'can:sessions.view']);
         Route::prefix('sessions/{session}/attendance')->whereUuid('session')->middleware(['can:attendance.view', 'can:sessions.view'])->group(function (): void {
             Route::get('/', [AttendanceController::class, 'roster']);

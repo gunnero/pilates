@@ -67,6 +67,6 @@ class MemberIntegrityTest extends TestCase
         $this->assertStringNotContainsString($data['token'], DB::table('member_invitations')->get()->toJson());
         $audit = DB::table('audit_events')->get()->toJson();
         $this->assertStringNotContainsString($data['token'], $audit);
-        $this->assertStringNotContainsString('new@example.test',$audit);
+        $this->assertStringNotContainsString('new@example.test', $audit);
     }
 }

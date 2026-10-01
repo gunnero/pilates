@@ -14,3 +14,10 @@ export const credentials: Credentials = {
   write: (token) => serialize(() => SecureStore.setItemAsync(key, token, options)),
   clear: () => serialize(() => SecureStore.deleteItemAsync(key, options)),
 };
+
+const staffKey = 'gt.staff.token';
+export const staffCredentials: Credentials = {
+ read: () => serialize(() => SecureStore.getItemAsync(staffKey, options)),
+ write: token => serialize(() => SecureStore.setItemAsync(staffKey, token, options)),
+ clear: () => serialize(() => SecureStore.deleteItemAsync(staffKey, options)),
+};

@@ -279,16 +279,16 @@ class TrainerProfileTest extends TestCase
         $access = $this->membership($user, $org);
         $url = $this->base($org).'/trainers';
         $this->getJson($url)->assertUnauthorized();
-        $token = $user->createToken('Fixture view',['studio.access', 'trainers.view'])->plainTextToken;
+        $token = $user->createToken('Fixture view', ['studio.access', 'trainers.view'])->plainTextToken;
         $this->withToken($token)->getJson($url)->assertOk();
-        $this->postJson($url,['membership_id' => $access->public_id])->assertForbidden();
+        $this->postJson($url, ['membership_id' => $access->public_id])->assertForbidden();
     }
 
     public function test_audit_failure_rolls_back_enablement(): void
     {
         [, ,$access,$url] = $this->setupOwner();
         DB::unprepared("CREATE OR REPLACE FUNCTION gt_test_trainer_audit_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Fixture'; END $$; CREATE TRIGGER gt_test_trainer_fail BEFORE INSERT ON audit_events FOR EACH ROW EXECUTE FUNCTION gt_test_trainer_audit_fail();");
-        $this->postJson($url,['membership_id' => $access->public_id])->assertStatus(500);
-        $this->assertDatabaseCount('trainer_profiles',0);
+        $this->postJson($url, ['membership_id' => $access->public_id])->assertStatus(500);
+        $this->assertDatabaseCount('trainer_profiles', 0);
     }
 }

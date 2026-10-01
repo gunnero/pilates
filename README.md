@@ -91,3 +91,7 @@ GT-014 adds typed studio policies and responsive administration. Existing tenant
 ## GT-015 communication engine
 
 GT-015 extends the existing inbox with channel preferences, account-bound native device registration, Expo ticket/receipt delivery, Laravel mail architecture, queued announcements and durable worker recovery. See [domain/API contracts](docs/domain/communication-engine.md), [worker operations](docs/operations/notifications.md) and [completion evidence](docs/tasks/GT-015_COMPLETION.md). External providers are disabled locally; nothing is deployed or pushed.
+
+## GT-016 daily operations
+
+Staff web navigation now includes Daily operations; the native app includes separate trainer/staff sign-in. Both use scoped session/roster/profile projections and existing attendance commands. See [domain/API contracts](docs/domain/operations-dashboard.md), [daily workflows](docs/operations/daily-operations.md), and [verification](docs/tasks/GT-016_COMPLETION.md).

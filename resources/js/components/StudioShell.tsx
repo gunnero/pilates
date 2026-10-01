@@ -16,10 +16,12 @@ import { Members } from './Members';
 import { Trainers } from './Trainers';
 import { Groups } from './Groups';
 import { AttendanceToday } from './Attendance';
+import { Operations } from './Operations';
 import { Sessions } from './Sessions';
 import { LanguagePicker } from './LanguagePicker';
 const sections = [
     'dashboard',
+    'operations',
     'members',
     'groups',
     'schedule',
@@ -45,17 +47,27 @@ export function StudioShell() {
     const [loggingOut, setLoggingOut] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
+    const requestedOrganization = new URLSearchParams(location.search).get(
+        'organization',
+    );
     useEffect(() => {
         const controller = new AbortController();
         api.get<{ data: Profile }>('/api/v1/me', controller.signal)
             .then(({ data }) => {
+                if (controller.signal.aborted) return;
                 setProfile(data);
                 setSelected((current) =>
-                    data.organizations.some((item) => item.id === current)
-                        ? current
-                        : (data.active_organization_id ??
-                          data.organizations[0]?.id ??
-                          ''),
+                    requestedOrganization
+                        ? data.organizations.some(
+                              (item) => item.id === requestedOrganization,
+                          )
+                            ? requestedOrganization
+                            : ''
+                        : data.organizations.some((item) => item.id === current)
+                          ? current
+                          : (data.active_organization_id ??
+                            data.organizations[0]?.id ??
+                            ''),
                 );
                 setError('');
             })
@@ -66,7 +78,7 @@ export function StudioShell() {
                 else setError('error');
             });
         return () => controller.abort();
-    }, [retry]);
+    }, [retry, requestedOrganization]);
     useEffect(() => {
         if (!selected) return;
         const controller = new AbortController();
@@ -75,6 +87,7 @@ export function StudioShell() {
             controller.signal,
         )
             .then(({ data }) => {
+                if (controller.signal.aborted) return;
                 setOrganization(data);
                 setTenantError('');
             })
@@ -138,13 +151,17 @@ export function StudioShell() {
     const section =
         location.pathname === '/'
             ? 'dashboard'
-            : location.pathname.startsWith('/schedule/')
-              ? 'schedule'
-              : location.pathname.startsWith('/groups/')
-                ? 'groups'
-                : location.pathname.startsWith('/trainers/')
-                  ? 'trainers'
-                  : location.pathname.slice(1);
+            : location.pathname.startsWith('/operations/')
+              ? 'operations'
+              : location.pathname.startsWith('/schedule/')
+                ? 'schedule'
+                : location.pathname.startsWith('/groups/')
+                  ? 'groups'
+                  : location.pathname.startsWith('/members/')
+                    ? 'members'
+                    : location.pathname.startsWith('/trainers/')
+                      ? 'trainers'
+                      : location.pathname.slice(1);
     const known = sections.some((item) => item === section);
     const ready = organization?.id === selected && !tenantError;
     return (
@@ -184,6 +201,7 @@ export function StudioShell() {
                                     'groups',
                                     'schedule',
                                     'attendance',
+                                    'operations',
                                     'memberships',
                                     'payments',
                                 ].includes(item) && (
@@ -291,6 +309,12 @@ export function StudioShell() {
                             key={organization.id}
                             organization={organization}
                         />
+                    ) : section === 'operations' ? (
+                        <Operations
+                            key={organization.id}
+                            organization={organization}
+                            sessionId={location.pathname.split('/')[2]}
+                        />
                     ) : section === 'attendance' ? (
                         <AttendanceToday
                             key={organization.id}
@@ -320,8 +344,9 @@ export function StudioShell() {
                         />
                     ) : section === 'members' ? (
                         <Members
-                            key={organization.id}
+                            key={`${organization.id}:${location.pathname.split('/')[2] ?? 'list'}`}
                             organization={organization}
+                            memberId={location.pathname.split('/')[2]}
                         />
                     ) : section === 'staff' ? (
                         <Staff

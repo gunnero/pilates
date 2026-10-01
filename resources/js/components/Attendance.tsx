@@ -200,6 +200,7 @@ export function AttendanceRoster({
     const [page, setPage] = useState(1);
     const [revision, setRevision] = useState(0);
     const [error, setError] = useState('');
+    const [actionError, setActionError] = useState('');
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState(false);
     const [editing, setEditing] = useState<string | null>(null);
@@ -240,6 +241,7 @@ export function AttendanceRoster({
     async function write(path: string, data: unknown) {
         setBusy(true);
         setError('');
+        setActionError('');
         setNotice('');
         try {
             await api.post(base + path, data);
@@ -249,7 +251,9 @@ export function AttendanceRoster({
             setNotice(t('attendanceSaved'));
             onChanged?.();
         } catch (e) {
-            setError(errorMessage(e));
+            setActionError(errorMessage(e));
+            setRevision((v) => v + 1);
+            onChanged?.();
         } finally {
             setBusy(false);
         }
@@ -282,7 +286,9 @@ export function AttendanceRoster({
         <section aria-label={t('attendanceTitle')}>
             <h3>{t('attendanceTitle')}</h3>
             <p className="muted">{t('attendancePolicy')}</p>
-            {error && <p role="alert">{error}</p>}
+            {(actionError || error) && (
+                <p role="alert">{actionError || error}</p>
+            )}
             {notice && <p role="status">{notice}</p>}
             {result && (
                 <>

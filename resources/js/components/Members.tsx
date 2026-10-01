@@ -264,13 +264,19 @@ function MemberForm({
     );
 }
 
-export function Members({ organization }: { organization: Organization }) {
+export function Members({
+    organization,
+    memberId,
+}: {
+    organization: Organization;
+    memberId?: string;
+}) {
     const { t } = useTranslation();
     const [query, setQuery] = useState<Search>({ page: 1 });
     const [result, setResult] = useState<Page<StudioMember> | null>(null);
     const [profile, setProfile] = useState<StudioMember | null>(null);
     const [mode, setMode] = useState<'list' | 'profile' | 'new' | 'edit'>(
-        'list',
+        memberId ? 'profile' : 'list',
     );
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
@@ -281,6 +287,21 @@ export function Members({ organization }: { organization: Organization }) {
     const allowed =
         organization.permissions.includes('members.view') &&
         organization.location_scope === 'all';
+    useEffect(() => {
+        if (!allowed || !memberId) return;
+        const c = new AbortController();
+        api.get<MemberResponse>(`${base}/${memberId}`, c.signal)
+            .then((response) => {
+                if (!c.signal.aborted) {
+                    setProfile(response.data);
+                    setMode('profile');
+                }
+            })
+            .catch((err) => {
+                if (!c.signal.aborted) setError(errorMessage(err));
+            });
+        return () => c.abort();
+    }, [base, memberId, allowed]);
     useEffect(() => {
         if (!allowed || mode !== 'list') return;
         const controller = new AbortController();
@@ -368,6 +389,9 @@ export function Members({ organization }: { organization: Organization }) {
         );
     return (
         <section className="management-panel member-directory">
+            {mode === 'profile' && !profile && !error && (
+                <p role="status">{t('loading')}</p>
+            )}
             <div className="section-heading">
                 <h2>
                     {t(

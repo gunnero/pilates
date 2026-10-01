@@ -253,3 +253,25 @@ it('handles directory and profile API failures without exposing another profile'
         screen.queryByRole('heading', { name: 'Профил на клиент' }),
     ).not.toBeInTheDocument();
 });
+
+it('opens a permitted full profile from an operations deep link', async () => {
+    render(<Members organization={organization} memberId="client" />);
+    expect(
+        await screen.findByRole('heading', { name: 'Тест Клиент' }),
+    ).toBeVisible();
+    expect(api.get).toHaveBeenCalledWith(
+        '/api/v1/organizations/org/members/client',
+        expect.any(AbortSignal),
+    );
+    expect(api.post).not.toHaveBeenCalled();
+});
+it('rejects a full-profile deep link for selected-location staff', () => {
+    render(
+        <Members
+            organization={{ ...organization, location_scope: 'selected' }}
+            memberId="client"
+        />,
+    );
+    expect(screen.getByRole('alert')).toBeVisible();
+    expect(api.get).not.toHaveBeenCalled();
+});

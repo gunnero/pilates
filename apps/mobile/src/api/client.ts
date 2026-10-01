@@ -49,6 +49,9 @@ export function apiOrigin(
 }
 export class ApiClient {
     token: string | null = null;
+    setToken(token: string | null) {
+        this.token = token;
+    }
     locale: 'mk' | 'en' = 'mk';
     setLocale(locale: 'mk' | 'en') {
         this.locale = locale;

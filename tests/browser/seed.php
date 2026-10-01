@@ -329,3 +329,47 @@ foreach (['desktop', 'mobile'] as $viewport) {
 }
 umask(0077);
 file_put_contents(base_path('.local/browser-settings-fixture.json'), json_encode($settingsFixtures, JSON_THROW_ON_ERROR));
+
+// GT-016 owns separate operator fixtures; existing browser flows retain their state.
+$operationsFixtures = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Operations studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Operations trainer', 'email' => 'operations-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => [...StaffRole::Trainer->permissions(), 'reservations.manage', 'attendance.correct', 'waiting_list.view']])->save();
+    $admin = User::factory()->create(['name' => 'Operations admin', 'email' => 'operations-admin-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $adminAccess = new OrganizationMembership;
+    $adminAccess->forceFill(['organization_id' => $org->id, 'user_id' => $admin->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $loc = new Location;
+    $loc->forceFill(['organization_id' => $org->id, 'name' => 'Operations Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $access->id, 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Operations Pilates', 'capacity' => 12, 'status' => 'active'])->save();
+    $start = CarbonImmutable::now()->addMinutes(10);
+    $s = new TrainingSession;
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Operations trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    foreach (['Reserved', 'Walkin'] as $name) {
+        $client = new StudioMember;
+        $client->forceFill(['organization_id' => $org->id, 'first_name' => $name, 'last_name' => 'Offline', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
+        if ($name === 'Reserved') {
+            DB::transaction(function () use ($org, $s, $client, $actor) {
+                Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+                Allocation::reserve($s, $client, $actor, false);
+            });
+        }
+    }
+    $ended = $s->replicate(['public_id']);
+    $ended->starts_at = $start->subHours(3);
+    $ended->ends_at = $start->subHours(2);
+    $ended->local_date = $ended->starts_at->setTimezone($org->timezone)->toDateString();
+    $ended->save();
+    $pending = new StudioMember;
+    $pending->forceFill(['organization_id' => $org->id, 'first_name' => 'Pending', 'last_name' => 'Fixture', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
+    $reservation = new Reservation;
+    $reservation->forceFill(['organization_id' => $org->id, 'training_session_id' => $ended->id, 'studio_member_id' => $pending->id, 'source' => 'staff', 'status' => 'active', 'created_by' => $actor->id])->save();
+    $operationsFixtures[$viewport] = ['organization' => $org->public_id, 'session' => $s->public_id, 'ended' => $ended->public_id, 'member' => $pending->public_id];
+
+}
+
+file_put_contents(base_path('.local/browser-operations-fixture.json'), json_encode($operationsFixtures, JSON_THROW_ON_ERROR));

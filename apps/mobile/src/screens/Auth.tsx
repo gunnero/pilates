@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useSession } from '../auth/context';
+import { en as opsEn, mk as opsMk } from '../locales/operations';
 import { useLocale } from '../locales/context';
 import {
     Body,
@@ -15,12 +16,14 @@ import type { MemberLink } from '../navigation/links';
 export function Auth({
     link,
     consumed,
+    staffSignIn,
 }: {
     link: Extract<MemberLink, { email: string }> | null;
     consumed: () => void;
+    staffSignIn?: () => void;
 }) {
     const { controller } = useSession();
-    const { t, setLocale } = useLocale();
+    const { t, setLocale, locale } = useLocale();
     const [mode, setMode] = useState<'login' | 'activate' | 'forgot' | 'reset'>(
         link?.kind ?? 'login',
     );
@@ -62,6 +65,13 @@ export function Auth({
     return (
         <Screen headerless>
             <Heading>{t('app')}</Heading>
+            {staffSignIn && (
+                <Button
+                    label={locale === 'mk' ? opsMk.staffMode : opsEn.staffMode}
+                    disabled={busy}
+                    onPress={staffSignIn}
+                />
+            )}
             <Body>{t(mode)}</Body>
             <Field label={t('email')} value={email} onChange={setEmail} email />
             {(mode === 'activate' || mode === 'reset') && (

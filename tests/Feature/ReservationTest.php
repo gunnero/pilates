@@ -352,6 +352,6 @@ class ReservationTest extends TestCase
         $this->postJson("$base/waiting-list/$w->public_id/cancel")->assertOk();
         $this->postJson("$base/sessions/$id/waiting-list", ['member_id' => $b->public_id])->assertOk();
         $this->postJson("$base/reservations/$rid/cancel")->assertOk();
-        $this->assertSame($c->id,Reservation::where('status','active')->firstOrFail()->studio_member_id);
+        $this->assertSame($c->id, Reservation::where('status', 'active')->firstOrFail()->studio_member_id);
     }
 }

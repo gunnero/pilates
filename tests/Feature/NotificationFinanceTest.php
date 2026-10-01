@@ -65,6 +65,6 @@ class NotificationFinanceTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-10-01T00:00:00Z'));
         $this->assertSame(1, Generate::run($o->public_id)['created']);
         $this->assertSame(0, Generate::run($o->public_id)['created']);
-        $this->assertSame(1,PlatformNotification::where('type','membership.activated')->count());
+        $this->assertSame(1, PlatformNotification::where('type', 'membership.activated')->count());
     }
 }

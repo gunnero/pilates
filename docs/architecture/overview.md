@@ -47,3 +47,7 @@ GT-014 centralizes operational defaults in a readonly typed StudioSettings resol
 ## GT-015 communication extension
 
 The existing GT-010 domain/outbox now owns in-app, push and email destinations. Native registrations are account/login/tenant bound; provider I/O stays outside organization transactions. Announcements fan out through bounded database-queue jobs, and Expo receipt processing distinguishes acceptance from provider handoff. Read [communication contracts](../domain/communication-engine.md) and [operations](../operations/notifications.md). Existing reservations, attendance, cash evidence and StudioSettings remain authoritative.
+
+## GT-016 operations projections
+
+The [operations dashboard contract](../domain/operations-dashboard.md) composes existing session, reservation, attendance, finance and communication state without a new business ledger. Read-only repeatable-read snapshots provide internally consistent responses; commands retain existing organization/session locking and audit coupling. Native staff mode uses explicit limited staff tokens, separate from member credentials, and current TenantContext authorization. See the [daily operations guide](../operations/daily-operations.md).

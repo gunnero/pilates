@@ -858,3 +858,21 @@ h2 {
 .member-portal section {
     margin-block: 1.25rem;
 }
+
+.operations-workspace .member-filters {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+.operations-workspace input,
+.operations-workspace select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+.operations-workspace .form-actions,
+.operations-workspace .pagination {
+    flex-wrap: wrap;
+}
+.operations-workspace > section,
+.operations-workspace article {
+    overflow-wrap: anywhere;
+}

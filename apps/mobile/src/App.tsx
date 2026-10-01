@@ -16,6 +16,7 @@ import { credentials } from './storage/credentials';
 import { createCache } from './hooks/cache';
 import { LocaleProvider, useLocale } from './locales/context';
 import { Body, Button, Heading, Loading, Screen } from './components/ui';
+import { StaffOperations } from './screens/StaffOperations';
 import { Auth } from './screens/Auth';
 import { Organizations } from './screens/Organizations';
 import {
@@ -46,6 +47,7 @@ function Flow() {
         if (!organization || !account) return;
         return bindDevice(controller.api, organization.id);
     }, [controller, organization, account]);
+    const [staffMode, setStaffMode] = useState(false);
     const [link, setLink] = useState<MemberLink | null>(null);
     useEffect(() => {
         controller.api.client.setLocale(locale);
@@ -160,6 +162,13 @@ function Flow() {
                 />
             </Screen>
         );
+    if (phase === 'anonymous' && staffMode)
+        return (
+            <StaffOperations
+                origin={controller.api.client.origin}
+                exit={() => setStaffMode(false)}
+            />
+        );
     if (phase === 'anonymous')
         return (
             <>
@@ -167,6 +176,7 @@ function Flow() {
                     key={link && 'email' in link ? link.token : 'login'}
                     link={link && 'email' in link ? link : null}
                     consumed={() => setLink(null)}
+                    staffSignIn={() => setStaffMode(true)}
                 />
             </>
         );

@@ -139,3 +139,21 @@ describe('studio foundation', () => {
         ).toBeInTheDocument();
     });
 });
+
+it('does not resolve a finance deep link to a foreign organization', async () => {
+    vi.mocked(api.get).mockResolvedValue(profile);
+    mount('/payments?organization=foreign');
+    await waitFor(() =>
+        expect(api.get).toHaveBeenCalledWith(
+            '/api/v1/me',
+            expect.any(AbortSignal),
+        ),
+    );
+    expect(
+        vi
+            .mocked(api.get)
+            .mock.calls.some(([path]) =>
+                path.includes('/organizations/foreign'),
+            ),
+    ).toBe(false);
+});

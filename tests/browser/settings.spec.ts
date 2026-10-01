@@ -32,7 +32,7 @@ test('studio settings defaults, policy enforcement, locale, timezone and respons
     await expect(page).not.toHaveURL(/login/);
     await page.getByLabel('Select a studio').selectOption(f.organization);
     await page.goto('/settings');
-    await page.getByLabel('Јазик').selectOption('en');
+    await page.getByRole('banner').getByLabel('Јазик').selectOption('en');
     await expect(
         page.getByRole('heading', { name: 'Studio policies' }),
     ).toBeVisible();

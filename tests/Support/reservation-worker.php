@@ -42,6 +42,6 @@ try {
         echo $response->getStatusCode();
     }
 } catch (Throwable $e) {
-    fwrite(STDERR,$e::class);
+    fwrite(STDERR, $e::class);
     exit(1);
 }
