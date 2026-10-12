@@ -117,6 +117,8 @@ jobs:
       - run: |-
           if [[ ! -x /usr/lib/postgresql/18/bin/initdb ]]; then
             sudo apt-get update
+            sudo apt-get install -y postgresql-common
+            sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
             sudo apt-get install -y postgresql-18
           fi
         name: PostgreSQL 18 binaries for private disposable clusters

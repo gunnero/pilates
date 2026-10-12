@@ -7,7 +7,11 @@ fi
 # Each batch owns a fresh gt_test fixture/cache lifecycle. Real production login
 # limits still apply: unrelated flows must not exhaust the same loopback IP bucket.
 if [[ $# -eq 0 ]]; then
-    mapfile -t prior_flows < <(rg --files tests/browser -g '*.spec.ts' -g '!reports.spec.ts' | sort)
+    prior_flows=()
+    for flow in tests/browser/*.spec.ts; do
+        [[ -f "$flow" && "$flow" != tests/browser/reports.spec.ts ]] && prior_flows+=("$flow")
+    done
+    [[ ${#prior_flows[@]} -gt 0 && -f tests/browser/reports.spec.ts ]]
     status=0
     for viewport in desktop mobile; do
         pnpm exec playwright test "${prior_flows[@]}" --project="$viewport" || status=1

@@ -18,4 +18,5 @@ for line in source.read_text().splitlines():
     lines.append(line)
 lines += [key + '=' + value for key, value in replacements.items()]
 (root / '.env.e2e').write_text('\n'.join(lines) + '\n')
+(root / '.local').mkdir(mode=0o700, exist_ok=True)
 subprocess.run(['php', 'tests/browser/seed.php'], check=True)
