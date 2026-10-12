@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Process\Process;
@@ -30,6 +31,7 @@ final class ReportingConcurrencyTest extends TestCase
     #[DataProvider('cases')]
     public function test_real_snapshot_overlaps_canonical_writes(string $case): void
     {
+        File::ensureDirectoryExists(base_path('.local/gt017'), 0700);
         [$o,$u,$a,$sid,$m,$payment] = $this->reportFixture();
         $base = $this->base($o);
         $clock = '2026-09-23T12:00:00Z';

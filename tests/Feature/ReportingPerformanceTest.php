@@ -6,6 +6,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Tests\Support\SessionFixtures;
@@ -17,6 +18,7 @@ final class ReportingPerformanceTest extends TestCase
 
     public function test_representative_authenticated_report_and_export_budgets(): void
     {
+        File::ensureDirectoryExists(base_path('.local/gt017'), 0700);
         [$o,$u,$a,$l,$t,$g] = $this->sessionFixture();
         [$other, $otherUser, , $otherLocation, $otherTrainer, $otherGroup] = $this->sessionFixture();
         [$empty] = $this->sessionFixture();
