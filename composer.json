@@ -41,7 +41,7 @@
         "dev": "@php artisan serve --host=127.0.0.1 --port=8010",
         "test": "@php artisan test",
         "format": "pint",
-        "format:check": "pint --test",
+        "format:check": "pint --test --cache-file=/dev/null",
         "analyse": "phpstan analyse --memory-limit=512M",
         "check": [
             "@format:check",

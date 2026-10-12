@@ -1,9 +1,25 @@
 name: Platform checks
-on: [push, pull_request]
+'on':
+  - push
+  - pull_request
 permissions:
   contents: read
+env:
+  COMPOSER_PROCESS_TIMEOUT: 900
 jobs:
-  verify:
+  php-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: composer validate --strict
+      - run: composer format:check
+        if: ${{ !cancelled() }}
+      - run: composer analyse
+        if: ${{ !cancelled() }}
+  backend:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -12,43 +28,177 @@ jobs:
           POSTGRES_USER: gt_test
           POSTGRES_PASSWORD: ci-only-postgres
           POSTGRES_DB: gt_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U gt_test -d gt_test"
-          --health-interval 5s --health-timeout 5s --health-retries 10
+        ports:
+          - 5432:5432
+        options:
+          --health-cmd "pg_isready -U gt_test -d gt_test" --health-interval 5s --health-timeout 5s --health-retries
+          10
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
-          extensions: pdo_pgsql, redis, mbstring, intl
-          coverage: none
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: scripts/ci-test-config
+      - run: composer test
+        name: Complete PostgreSQL suite including concurrency and budgets
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
-          node-version: '24'
-      - run: npm install --global pnpm@12.3.4
-      - name: Isolated CI configuration
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import base64, secrets
-          values = {'APP_ENV': 'testing', 'APP_KEY': 'base64:' + base64.b64encode(secrets.token_bytes(32)).decode(), 'DB_PORT': '5432', 'DB_DATABASE': 'gt_test', 'DB_USERNAME': 'gt_test', 'DB_PASSWORD': 'ci-only-postgres', 'CACHE_STORE': 'array', 'SESSION_DRIVER': 'array'}
-          lines = []
-          for line in Path('.env.example').read_text().splitlines():
-              key = line.split('=', 1)[0]
-              lines.append(key + '=' + values[key] if key in values else line)
-          Path('.env.testing').write_text('\n'.join(lines) + '\n')
-          PY
-      - run: composer install --no-interaction --prefer-dist
-      - run: pnpm install --frozen-lockfile
-      - run: composer validate --strict
-      - run: composer check
-      - run: pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
-      - run: pnpm mobile:check
+          name: reporting-performance
+          path: .local/gt017/performance.json
+          if-no-files-found: warn
+          retention-days: 7
+          include-hidden-files: true
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm typecheck
+      - run: pnpm lint
+        if: ${{ !cancelled() }}
+      - run: pnpm format:check
+        if: ${{ !cancelled() }}
+      - run: pnpm test
+        if: ${{ !cancelled() }}
+      - run: pnpm build
+        if: ${{ !cancelled() }}
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm --dir apps/mobile typecheck
+      - run: timeout 180s pnpm --dir apps/mobile test
+        name: Native assertions and normal process shutdown
+        if: ${{ !cancelled() }}
+      - run: pnpm --dir apps/mobile run doctor
+        if: ${{ !cancelled() }}
+      - run: pnpm --dir apps/mobile bundle
+        if: ${{ !cancelled() }}
+      - run: scripts/native-prebuild
+        if: ${{ !cancelled() }}
+  browser:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: gt_test
+          POSTGRES_PASSWORD: ci-only-postgres
+          POSTGRES_DB: gt_test
+        ports:
+          - 5432:5432
+        options:
+          --health-cmd "pg_isready -U gt_test -d gt_test" --health-interval 5s --health-timeout 5s --health-retries
+          10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: scripts/ci-test-config
+      - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+        name: All desktop and mobile flows in fresh isolated batches
+  preservation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: |-
+          if [[ ! -x /usr/lib/postgresql/18/bin/initdb ]]; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-18
+          fi
+        name: PostgreSQL 18 binaries for private disposable clusters
+      - run: |-
+          mkdir -p .local
+          python3 tests/Support/reporting-preservation.py
+        name: Fresh installation and strict-base upgrade preservation
+      - run: pnpm build
+        name: Build exact-source private candidate assets
+        if: ${{ !cancelled() }}
+      - run: python3 tests/Support/release-candidate.py
+        name: Production-mode loopback TLS and synthetic backup/restore
+        if: ${{ !cancelled() }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: private-candidate-recovery-summary
+          path: .local/gt017-closeout/release-*/result.json
+          if-no-files-found: warn
+          retention-days: 7
+          include-hidden-files: true
+  audits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
       - run: composer audit --locked
-      - run: pnpm audit
+        name: Composer dependency audit
+      - run: scripts/dependency-audit-policy collect .local/ci-audit
+        name: Collect raw JavaScript audit and actual exit status (not approval)
+        if: ${{ !cancelled() }}
+      - run: python3 tests/Support/dependency-policy-test.py
+        name: Audit-policy fail-closed regression checks
+        if: ${{ !cancelled() }}
+      - run: scripts/dependency-audit-policy check .local/ci-audit
+        name: Mandatory dependency policy (no approved CI exception)
+        if: ${{ !cancelled() }}
       - run: pnpm peers check
+        name: Peer dependency checks
+        if: ${{ !cancelled() }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: raw-dependency-audit
+          path: .local/ci-audit/
+          if-no-files-found: error
+          retention-days: 7
+          include-hidden-files: true
+  artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - run: scripts/secrets-check
-      - run: git diff --check
+      - run: git diff --check HEAD^ HEAD
+      - run: git diff --exit-code 7229d92c91382d1fe4af5cd221a56bf707b48a1d HEAD -- database/migrations
+        name: Preserve historical migrations
+  required:
+    if: ${{ !cancelled() }}
+    needs:
+      - php-quality
+      - backend
+      - web
+      - native
+      - browser
+      - preservation
+      - audits
+      - artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every required category must actually succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |-
+          python3 - <<'PYCODE'
+          import json, os, sys
+          jobs = json.loads(os.environ['RESULTS'])
+          for name, job in jobs.items():
+              print(name + ': ' + job['result'])
+          sys.exit(0 if jobs and all(job['result'] == 'success' for job in jobs.values()) else 1)
+          PYCODE

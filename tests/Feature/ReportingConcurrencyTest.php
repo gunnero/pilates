@@ -24,7 +24,7 @@ final class ReportingConcurrencyTest extends TestCase
             }
         }
 
-return $cases;
+        return $cases;
     }
 
     #[DataProvider('cases')]

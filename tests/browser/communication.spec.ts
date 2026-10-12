@@ -78,8 +78,8 @@ test('communication announcements, session changes, preferences, read state and 
     const current = (
         await request(page, `${base}/sessions/${f.session}`, 'GET')
     ).body.data;
-    const start = new Date(new Date(current.starts_at).getTime() + 3 * 3600000);
-    const end = new Date(start.getTime() + 3600000);
+    let start = new Date(new Date(current.starts_at).getTime() + 3 * 3600000);
+    let end = new Date(start.getTime() + 3600000);
     const format = (d: Date) =>
         new Intl.DateTimeFormat('sv-SE', {
             timeZone: current.timezone,
@@ -92,6 +92,12 @@ test('communication announcements, session changes, preferences, read state and 
         })
             .format(d)
             .split(' ');
+    // Sessions use a single studio-local date. Keep this change valid near midnight.
+    if (format(start)[0] !== format(end)[0]) {
+        start = new Date(start.getTime() + 12 * 3600000);
+        end = new Date(start.getTime() + 3600000);
+    }
+    expect(format(end)[0]).toBe(format(start)[0]);
     const [date, time] = format(start);
     expect(
         (

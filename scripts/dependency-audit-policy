@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Raw audit collection is evidence. Only a complete clean audit satisfies policy.
+
+There is deliberately no active CI exception or advisory allowlist. The historical
+GT-017 local-commit approval does not authorize this gate or any release.
+"""
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+
+def evaluate(report, status):
+    if type(status) is not int or status != 0 or not isinstance(report, dict):
+        return False
+    metadata = report.get('metadata')
+    if not isinstance(metadata, dict):
+        return False
+    counts = metadata.get('vulnerabilities')
+    if not isinstance(counts, dict) or set(counts) != {'info', 'low', 'moderate', 'high', 'critical'}:
+        return False
+    return (
+        all(type(value) is int and value == 0 for value in counts.values())
+        and report.get('advisories') == {}
+        and not report.get('error')
+    )
+
+
+def main():
+    mode, directory = sys.argv[1:]
+    directory = Path(directory)
+    if mode == 'collect':
+        directory.mkdir(parents=True, exist_ok=True)
+        try:
+            result = subprocess.run(['pnpm', 'audit', '--json'], capture_output=True, text=True, timeout=180)
+            output, error, status = result.stdout, result.stderr, result.returncode
+        except (OSError, subprocess.TimeoutExpired):
+            output, error, status = '', 'Audit execution unavailable or timed out.', 125
+        (directory / 'audit.json').write_text(output)
+        (directory / 'audit-stderr.txt').write_text(error)
+        (directory / 'audit-status.json').write_text(json.dumps({'command': 'pnpm audit --json', 'exit_code': status}) + '\n')
+        print(f'Raw dependency audit {"PASS" if status == 0 else "FAILED"}; exit {status}. Collection is not policy approval.')
+        return 0
+    if mode != 'check':
+        return 2
+    try:
+        report = json.loads((directory / 'audit.json').read_text())
+        status = json.loads((directory / 'audit-status.json').read_text())['exit_code']
+        passed = evaluate(report, status)
+    except (OSError, ValueError, KeyError, TypeError):
+        passed = False
+    print('Dependency policy ' + ('PASS: complete clean audit.' if passed else 'FAILED: findings, unavailable/malformed evidence, or unsuccessful audit. No CI/release exception is approved.'))
+    return 0 if passed else 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

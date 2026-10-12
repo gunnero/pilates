@@ -8,10 +8,11 @@ fi
 # limits still apply: unrelated flows must not exhaust the same loopback IP bucket.
 if [[ $# -eq 0 ]]; then
     mapfile -t prior_flows < <(rg --files tests/browser -g '*.spec.ts' -g '!reports.spec.ts' | sort)
+    status=0
     for viewport in desktop mobile; do
-        pnpm exec playwright test "${prior_flows[@]}" --project="$viewport"
-        pnpm exec playwright test tests/browser/reports.spec.ts --project="$viewport"
+        pnpm exec playwright test "${prior_flows[@]}" --project="$viewport" || status=1
+        pnpm exec playwright test tests/browser/reports.spec.ts --project="$viewport" || status=1
     done
-    exit 0
+    exit "$status"
 fi
 exec pnpm exec playwright test "$@"

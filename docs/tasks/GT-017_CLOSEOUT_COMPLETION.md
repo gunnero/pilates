@@ -1,0 +1,77 @@
+# GT-017 closeout — current evidence and remaining gates
+
+Started12October2026 on hp-server as gunner at clean main/remote `7229d92c91382d1fe4af5cd221a56bf707b48a1d`, subject `GT-017: implement reporting and business analytics`. Original strict parent remains `a7a3f66ae9b7304bd2a3d1dc352de76745bb2f68`. This separately authorized maintenance preserves that already-pushed milestone. The user confirmed **local use only**. Public deployment, provider enablement, EAS/custom signing, history rewriting and GT-018 remain unauthorized.
+
+**Closeout is not yet complete:** independent local checks passed as recorded below, while hosted corrective verification is pending the reviewed push and the new CI/private-local dependency policy remains denied. The original GT-017 local-commit exception does not satisfy this policy.
+
+## Actual CI failure and root cause
+
+[GitHub run38294218163](https://github.com/gunnero/pilates/actions/runs/38294218163), exact milestone HEAD, failed `composer check` during Pint: ReportingConcurrencyTest, reported unary_operator_spaces and truncated statement-indentation-related rules. Backend tests and later web/native/browser/build/audit/secret steps were **skipped**, not failed or passed. Raw/sanitized run metadata/logs are under ignored `.local/gt017-closeout/original-run.json`, `original-failed.log`, `original-full.log`.
+
+Both hosts used locked Pint1.32.1; CI PHP8.5.11 versus local8.5.4. Locally the default cached check returned passed on the committed bytes. The same local binary with `--cache-file=/dev/null` failed; a fresh `git archive` snapshot and independent `composer install --no-scripts` with no copied formatter cache failed the same file. Thus PHP patch mismatch is not required to reproduce the discrepancy. The observed cause is a cache-dependent false pass; the historical cache's creation provenance is not established. Mandatory `composer format:check` now uses `/dev/null`, avoiding that stale result. Locked Pint corrected the misindented `return $cases;`; no test/assertion/race was removed or altered. Full fresh-snapshot uncached formatting then passed.
+
+## Corrective work
+
+- Independent GitHub jobs: PHP quality, backend PostgreSQL, web, native, browser PostgreSQL, preservation/recovery, dependency audits and secret/artifact checks. Backend/browser jobs have separate disposable services. Final required gate fails unless every category actually succeeds. No unrelated category is skipped because the audit fails.
+- Raw JavaScript audit collection stores unmodified JSON/stderr/exit status. A distinct mandatory policy gate denies every finding or missing/malformed/unavailable result. No CI exception is activated; no continue-on-error success claim. Four policy regression tests include unapproved/expired/changed-version/path/additional-advisory/registry-error controls.
+- Browser batches all execute and aggregate failure status. A newly reproduced midnight-dependent communication fixture attempted an unsupported cross-day occurrence edit; its future interval now remains within one studio-local date. Expected200 and all communication assertions remain intact. No production rate limit/domain behavior changed.
+- Native prebuild runs in a disposable copied app, preserving source and required platforms. Workflow records assertion results and normal process shutdown separately, with no forceExit.
+- Added guarded synthetic production-mode loopback TLS candidate, backup/restore, private-file/config/artifact recovery, runtime role checks and authenticated smoke. No shared services, actual development data or historical migrations were changed.
+
+## New local verification
+
+Evidence is ignored `.local/gt017-closeout/`; original GT-017 totals are not reused as new results.
+
+| Command / category                                          | New actual result                                                                                   | Evidence                                   |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Fresh locked snapshot Pint, `--test --cache-file=/dev/null` | Original failed; corrected complete source passed                                                   | pint-fresh.json,pint-fresh-fixed.json      |
+| `composer validate --strict`                                | Passed                                                                                              | composer-validate.log                      |
+| `COMPOSER_PROCESS_TIMEOUT=900 composer check`               | Pint passed; Larastan level8 zero errors; **437 tests / 5,351 assertions**,329.799s                 | backend.log                                |
+| `pnpm typecheck`; `pnpm lint`                               | Passed                                                                                              | typecheck.log,lint.log                     |
+| `pnpm test`                                                 | **130/130**,18files                                                                                 | web.log                                    |
+| `pnpm build`                                                | Passed; existing nonfatal chunk-size notice                                                         | build.log                                  |
+| `pnpm --dir apps/mobile typecheck`                          | Passed                                                                                              | native-typecheck.log                       |
+| `pnpm --dir apps/mobile test`                               | **89/89**,7suites; exit0 after64.274s without forceExit                                             | native-shutdown.log,json                   |
+| Native open-handle diagnostics                              | Cold run88passed/1test timeout; warmed diagnostic89passed,exit0,no listed open handles              | native-handles.log,native-handles-warm.log |
+| Native Doctor/bundle/disposable prebuild                    | **21/21**,both platforms passed                                                                     | doctor.log,native-bundle.log,prebuild.log  |
+| `pnpm test:e2e`                                             | **38/38 unique flows**,19per viewport; all four batches passed                                      | browser-all-batches.log                    |
+| `python3 tests/Support/reporting-preservation.py`           | Fresh17migrations; strict-base upgrade preserves41tables/constraints/grants;192snapshots/384exports | preservation.log                           |
+| `python3 tests/Support/dependency-policy-test.py`           | **4 tests passed**; production policy stays denied                                                  | command output / hosted policy step        |
+| `composer audit --locked`                                   | No advisories                                                                                       | composer-audit.log                         |
+| `pnpm audit --json`                                         | **FAILED exit1:2high,1moderate**,exact three residuals below                                        | audit/audit.json,audit-status.json         |
+| `scripts/dependency-audit-policy check ...`                 | **FAILED by design: no CI/release approval**                                                        | raw/policy output                          |
+| `pnpm peers check`                                          | Passed                                                                                              | peers.log                                  |
+
+Before the initial corrective commit, `pnpm format:check` passed, `scripts/secrets-check` passed for578sourcefiles, working/staged `git diff --check` passed, and all17migration hashes plus main/origin identity were verified. The staged review contains only18intended maintenance files; lockfiles and application/ledger writers are unchanged. These checks are repeated before subsequent pushes. PHP tests completed before browser tests on the shared local gt_test. Recovery/preservation use different private clusters. The initial browser run passed13flows and failed the communication time edit; later full passing runs supersede it, not erase it. Native's delayed notice is also documented in GT-016; no new application leak was established. The diagnostic timeout is not counted as a pass or fixed by weakening the ordinary5second test timeout.
+
+## Domain, performance and preservation evidence
+
+All original backend/web/native counts remain unchanged. Browser flows remain38; one additional same-local-date assertion strengthens the fixture. Seven independent-process report scenarios repeated five times give **35 actual PostgreSQL overlaps**, with barriers/coherent snapshots and canonical after-state checks. No SQLite substitute or fake concurrency.
+
+The measured fixture remains3tenants/12months/1,000members/2,000sessions/20,000reservation and attendance facts/10,000payments/500reversals. Each read uses10warmups/50timed authenticated requests; original budgets remain750ms overview/500ms details,35/15query bounds. New overview p95 values(ms): revenue51.50,settlement22.20,activity38.05,expiry13.71,attendance240.20,occupancy223.82,cancellations229.37,popularity248.08. Detail p9559.57ms; query counts13–34 overview and15details at both page sizes. Same Linux/PHP8.5.4/PostgreSQL18.6/Node24.20.0 environment; local timings are not a production SLA.
+
+Independent10,000-row parsing reconciles **10,000,000−500,000=9,500,000 minor MKD**. CSV0.2555s/11,708,778bytes/8MiB incremental peak; XLSX0.5259s/429,743bytes/2MiB incremental peak. Browser/restored HTTP exports reconcile **6,000−2,000=4,000**. Historical17migration bytes match the milestone; no schema/ledger/grant change was made. Acceptance details and unsupported historical/domain states remain in [GT-017_ACCEPTANCE.md](GT-017_ACCEPTANCE.md).
+
+## Candidate and recovery
+
+The user-confirmed surface is local only. The guarded exercise uses production/debug-off configuration, secure cookies and real CSRF over ephemeral loopback TLS; PHP/static artifact only, non-dev Composer dependencies, no Node/native/test/source-map/env/config-cache files. It restores synthetic PostgreSQL data to a second new database, verifies41canonical table hashes plus constraints/triggers/grants, private config/file bytes, runtime artifact extraction, runtime DDL denial, workers/scheduler/cleanup and owner/admin/trainer/member access/logout denials. CSV/XLSX are independently parsed after restore. All temporary processes stop afterward.
+
+Earlier recovery attempts exposed real verification/setup details: raw CHECK text changes equivalent casts/parentheses across PostgreSQL dump/restore; destination CONNECT grants must be explicit after ownership transfer; production Secure cookies correctly prevent an HTTP-only client from authenticating. The final exercise uses normalized predicate/catalog comparison plus invalid-write rejection, explicit least-privilege grants and TLS. No invariant was disabled to pass. TCP TIME_WAIT can cause a fresh invocation's port preflight to refuse reuse; occupied boundaries are not forcibly cleared.
+
+Candidate source manifest, runtime/backup checksums and exact successful result are retained under `.local/gt017-closeout/release-TIMESTAMP/result.json`; pre-commit evidence names base HEAD plus source manifest, while hosted recovery builds from its exact checkout. The [readiness gate table](../operations/gt-017-readiness.md) and [release/recovery runbook](../operations/gt-017-release-runbook.md) distinguish verified exercise from unprovisioned persistent/public infrastructure.
+
+## Dependencies and remaining decision
+
+Current raw audit remains FAILED on **GHSA-86w9-cpqp-85rv/node-forge1.4.0**, **GHSA-vfj7-8cjw-p6xm/braces3.0.3**, **GHSA-hp3w-g68c-fv3c/sprintf-js1.0.3**. Fresh primary-source/registry checks found no supported compatible patched package or parent remedy. Exact lockfile/path graph hashes remain unchanged; fresh web52/Android981/iOS984 source-map entries contain none of the three modules. Runtime artifact exclusion is specific evidence, not a clean build dependency tree.
+
+See [current review and unapproved CI/private-local proposal](../security/GT-017_DEPENDENCY_REVIEW.md). Proposed scope: these exact findings/versions/paths only, full unsuppressed FAILED audit retained, every other required category passing, no new exposure or provider/signing/public deployment, expiry/re-review by26October2026 or earlier fix/configuration/path/reachability change. The historical local-commit approval cannot activate it. No new waiver is accepted or implemented.
+
+Device/signing/provider checks are not applicable to this local web surface. They remain concrete blockers for any later native distribution or real-delivery scope; the runbook supplies exact test steps and evidence requirements. This host has no usable Android SDK/emulator/adb/KVM access or Xcode/enrolled device; no enrollment/credential workaround was attempted.
+
+## Hosted and Git finalization
+
+Maintenance subject: `Maintenance: fix CI and document GT-017 release readiness`. No checkpoint, amendment, rebase or force push. The initial reviewed corrective push will run every independent category; its outcomes must be inspected and added here before any final new risk decision. At this document's preparation point, that corrective run has not executed, so it is not claimed passing. Obtain actual maintenance hashes from Git; final response records exact local/remote HEAD and run URLs without a self-referential documentation/hash loop.
+
+Separate conclusions: original GT-017 remains its historical local-exception milestone; corrective local checks are recorded above; raw audit FAILED; CI/private-local policy blocked; readiness NOT READY pending mandatory hosted evidence and explicit new policy decision; application not publicly deployed/published, real providers/signing not enabled, and GT-018 not started.
+
+Local verified candidate evidence: `.local/gt017-closeout/release-20261012T192801/result.json`. Runtime archive SHA-256 `91e8061cea30ee621271ad86dcc2c96659e46c3687cff15f044eaf9c56eb0068`; synthetic database backup SHA-256 `787a41ff428aaa77c4538800efa6b3703f04f5bdce9506ebb986f6bc90b1a8ca`; source manifest SHA-256 `277b2494880b97a5e3086320ac345f2c6d5521ab1ee518bad19a900d1e514034`. This is the explicitly labelled pre-commit source snapshot; final hosted evidence will identify its exact corrective commit.

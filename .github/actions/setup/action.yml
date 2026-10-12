@@ -1,0 +1,26 @@
+name: Locked verification toolchain
+description: Install the existing PHP and Node toolchain without source or formatter caches
+runs:
+  using: composite
+  steps:
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.5'
+        extensions: pdo_pgsql, redis, mbstring, intl, zip
+        coverage: none
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+    - shell: bash
+      run: npm install --global pnpm@12.3.4
+    - shell: bash
+      run: composer install --no-interaction --prefer-dist
+    - shell: bash
+      run: pnpm install --frozen-lockfile
+    - shell: bash
+      run: |
+        php --version
+        composer --version
+        vendor/bin/pint --version
+        node --version
+        pnpm --version

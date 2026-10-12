@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Validate native project generation in a disposable copy, without signing."""
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+root = Path(__file__).resolve().parent.parent
+(root / '.local').mkdir(exist_ok=True)
+with tempfile.TemporaryDirectory(prefix='native-prebuild-', dir=root / '.local') as work:
+    app = Path(work) / 'app'
+    shutil.copytree(root / 'apps/mobile', app, ignore=shutil.ignore_patterns('node_modules', 'dist', '.expo', 'coverage', 'ios', 'android'))
+    (app / 'node_modules').symlink_to(root / 'apps/mobile/node_modules', target_is_directory=True)
+    subprocess.run(['pnpm', 'exec', 'expo', 'prebuild', '--no-install'], cwd=app, check=True)
