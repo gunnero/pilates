@@ -124,6 +124,7 @@ jobs:
         name: PostgreSQL 18 binaries for private disposable clusters
       - run: |-
           mkdir -p .local
+          php tests/Support/browser-fixture-test.php
           python3 tests/Support/reporting-preservation.py
         name: Fresh installation and strict-base upgrade preservation
       - run: pnpm build

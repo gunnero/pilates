@@ -113,7 +113,10 @@ try:
     clean_env = {key: value for key, value in os.environ.items() if not key.startswith(('APP_', 'DB_', 'DATABASE_', 'MAIL_', 'REDIS_', 'SESSION_', 'CACHE_', 'QUEUE_', 'NOTIFICATION_', 'EXPO_'))}
     env = clean_env | values
     run(['composer', 'install', '--no-interaction', '--prefer-dist'], env=env)
-    run(['php', 'tests/browser/seed.php'], env=env | {'APP_ENV': 'e2e'})
+    seeded = run(['php', 'tests/browser/seed.php'], env=env | {'APP_ENV': 'e2e'}, output=True)
+    assert 'GT_BROWSER_FIXTURE_COMPLETE' in seeded.splitlines(), 'Incomplete candidate fixture'
+    for table in ['training_sessions', 'cash_payments', 'payment_reversals']:
+        assert int(sql(55437, f'SELECT count(*) FROM {table};')) > 0, f'Empty required fixture: {table}'
     sql(55437, "UPDATE organization_memberships SET role='administrator' WHERE user_id=(SELECT id FROM users WHERE email='operations-admin-desktop@browser.example.test');")
     sql(55437, 'REASSIGN OWNED BY gt_test TO gt_migrate; GRANT CONNECT ON DATABASE gt_test TO gt_test; GRANT USAGE ON SCHEMA public TO gt_test; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO gt_test; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO gt_test; REVOKE INSERT,UPDATE,DELETE ON migrations FROM gt_test;')
     before = digest(55437)
@@ -124,12 +127,12 @@ try:
     run([BIN / 'pg_restore', '-h', '127.0.0.1', '-p', '55438', '-d', 'gt_test', '--role=gt_migrate', '--exit-on-error', dump])
     after = digest(55438)
     assert before == after, 'Restored hashes differ: ' + ','.join(key for key in before if before[key] != after.get(key))
-    invalid_writes = ['UPDATE training_sessions SET capacity=0', "UPDATE training_sessions SET status='invalid'", 'UPDATE cash_payments SET amount_minor=0']
+    invalid_writes = ['UPDATE training_sessions SET capacity=0', "UPDATE training_sessions SET status='invalid'", 'UPDATE cash_payments SET amount_minor=0', "UPDATE training_sessions SET starts_at=(local_date + TIME '23:30') AT TIME ZONE timezone, ends_at=(local_date + 1 + TIME '00:30') AT TIME ZONE timezone"]
     for statement in invalid_writes:
         failures = []
         for port in [55437, 55438]:
             result = subprocess.run([str(BIN / 'psql'), '-X', '-h', '127.0.0.1', '-p', str(port), '-d', 'gt_test', '-v', 'ON_ERROR_STOP=1', '-v', 'VERBOSITY=sqlstate', '-c', 'BEGIN; ' + statement + '; ROLLBACK;'], capture_output=True, text=True)
-            assert result.returncode != 0, 'Restored invariant accepted invalid write'
+            assert result.returncode != 0, 'Restored invariant accepted invalid write: ' + statement
             failures.append(result.stderr.strip())
         assert failures[0] == failures[1], 'Restored rejection changed'
     values['DB_PORT'] = '55438'

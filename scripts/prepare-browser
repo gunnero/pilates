@@ -19,4 +19,7 @@ for line in source.read_text().splitlines():
 lines += [key + '=' + value for key, value in replacements.items()]
 (root / '.env.e2e').write_text('\n'.join(lines) + '\n')
 (root / '.local').mkdir(mode=0o700, exist_ok=True)
-subprocess.run(['php', 'tests/browser/seed.php'], check=True)
+result = subprocess.run(['php', 'tests/browser/seed.php'], check=True, capture_output=True, text=True)
+if 'GT_BROWSER_FIXTURE_COMPLETE' not in result.stdout.splitlines():
+    raise SystemExit('Browser fixture setup did not finish; refusing partial or stale data.')
+print('Complete isolated browser fixture prepared.')

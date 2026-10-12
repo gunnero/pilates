@@ -14,6 +14,10 @@ require __DIR__.'/../../vendor/autoload.php';
 $app = require __DIR__.'/../../bootstrap/app.php';
 $app->loadEnvironmentFrom('.env.testing');
 $app->make(Kernel::class)->bootstrap();
+set_exception_handler(static function (Throwable $error): never {
+    fwrite(STDERR, 'Preservation check failed: '.$error::class.' ('.$error->getCode().')'.PHP_EOL);
+    exit(1);
+});
 if ($app->configurationIsCached() || config('database.connections.pgsql.database') !== 'gt_test' || config('database.connections.pgsql.username') !== 'gt_test' || config('database.connections.pgsql.host') !== '127.0.0.1' || ! in_array((string) config('database.connections.pgsql.port'), ['55435', '55436'], true) || config('database.connections.pgsql.url')) {
     throw new RuntimeException('Only disposable GT017 gt_test clusters are accepted.');
 }
@@ -42,6 +46,9 @@ if ($before !== null && json_encode($before) !== json_encode($snapshot())) {
 }
 $reports = 0;
 if ($mode === 'upgrade') {
+    if (DB::table('cash_payments')->count() === 0 || DB::table('payment_reversals')->count() === 0) {
+        throw new RuntimeException('Preservation requires a complete nonempty financial fixture.');
+    }
     $context = app(TenantContext::class);
     foreach (OrganizationMembership::where('role', 'owner')->where('status', 'active')->with(['user', 'organization'])->get() as $access) {
         $context->resolve($access->user, $access->organization->public_id);
@@ -55,6 +62,9 @@ if ($mode === 'upgrade') {
                 $reports++;
             });
         }
+    }
+    if ($reports !== 192) {
+        throw new RuntimeException('Preservation did not cover every expected baseline owner/report.');
     }
     if (json_encode($before) !== json_encode($snapshot())) {
         throw new RuntimeException('Reporting changed canonical data or ledger.');

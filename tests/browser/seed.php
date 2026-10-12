@@ -34,6 +34,12 @@ require __DIR__.'/../../vendor/autoload.php';
 $app = require __DIR__.'/../../bootstrap/app.php';
 $app->loadEnvironmentFrom('.env.e2e');
 $app->make(Kernel::class)->bootstrap();
+// Laravel's console exception renderer can return zero from this standalone script.
+set_exception_handler(static function (Throwable $error): never {
+    fwrite(STDERR, 'Browser fixture setup failed: '.$error::class.' ('.$error->getCode().')'.PHP_EOL);
+    exit(1);
+});
+require __DIR__.'/fixture-time.php';
 if ($app->configurationIsCached() || ! $app->environment('e2e')
     || config('database.default') !== 'pgsql'
     || config('database.connections.pgsql.database') !== 'gt_test'
@@ -42,7 +48,9 @@ if ($app->configurationIsCached() || ! $app->environment('e2e')
     || ! in_array(config('database.connections.pgsql.host'), ['localhost', '127.0.0.1'], true)) {
     throw new RuntimeException('Browser fixtures may only reset the isolated loopback gt_test database.');
 }
-Artisan::call('migrate:fresh', ['--force' => true]);
+if (Artisan::call('migrate:fresh', ['--force' => true]) !== 0) {
+    throw new RuntimeException('Browser fixture migration failed.');
+}
 $owners = [];
 foreach (['desktop', 'mobile'] as $viewport) {
     $owners[] = User::factory()->create(['name' => 'Test Owner '.$viewport, 'email' => $viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
@@ -122,7 +130,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Attendance Pilates', 'capacity' => 12, 'status' => 'active'])->save();
     $start = CarbonImmutable::now()->addMinutes(10);
     $s = new TrainingSession;
-    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
     foreach (['Reserved', 'Walkin'] as $name) {
         $client = new StudioMember;
         $client->forceFill(['organization_id' => $org->id, 'first_name' => $name, 'last_name' => 'Offline', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
@@ -160,7 +168,7 @@ foreach (['desktop', 'mobile', 'communication-desktop', 'communication-mobile'] 
     $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Attendance Pilates', 'capacity' => 1, 'status' => 'active'])->save();
     $start = CarbonImmutable::now()->addHours(23);
     $s = new TrainingSession;
-    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 1, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Notification owner', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 1, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Notification owner', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
     $recipient = User::factory()->create(['name' => 'Notification member', 'email' => 'notifications-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
     $client = new StudioMember;
     $client->forceFill(['organization_id' => $org->id, 'user_id' => $recipient->id, 'first_name' => 'Inbox', 'last_name' => 'Client', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'mk'])->save();
@@ -175,7 +183,8 @@ foreach (['desktop', 'mobile', 'communication-desktop', 'communication-mobile'] 
     });
     // Confirm one reservation, then cancel before reminder generation in the eligible window.
     $cancelSession = $s->replicate(['public_id']);
-    $cancelSession->forceFill(['starts_at' => $s->starts_at->addHour(), 'ends_at' => $s->ends_at->addHour(), 'local_date' => $s->starts_at->addHour()->setTimezone($org->timezone)->toDateString()])->save();
+    $cancelStart = CarbonImmutable::instance($s->starts_at->addHour())->max(CarbonImmutable::instance($s->ends_at));
+    $cancelSession->forceFill(['starts_at' => $cancelStart, 'ends_at' => fixtureSessionEnd($cancelStart, $org->timezone), 'local_date' => $cancelStart->setTimezone($org->timezone)->toDateString()])->save();
     DB::transaction(function () use ($org, $cancelSession, $client, $actor) {
         Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
         Allocation::reserve($cancelSession, $client, $actor, false);
@@ -223,7 +232,7 @@ foreach (['desktop', 'mobile', 'native-desktop', 'native-mobile'] as $viewport) 
     $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Member Pilates', 'capacity' => 1, 'status' => 'active'])->save();
     $start = CarbonImmutable::now()->addDay()->startOfHour();
     $s = new TrainingSession;
-    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 1, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Member trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 1, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Member trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
     $otherUser = User::factory()->create(['name' => 'Waiting member', 'email' => 'member-wait-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
     $other = new StudioMember;
     $other->forceFill(['organization_id' => $org->id, 'user_id' => $otherUser->id, 'first_name' => 'Waiting', 'last_name' => 'Member', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'en'])->save();
@@ -234,7 +243,7 @@ foreach (['desktop', 'mobile', 'native-desktop', 'native-mobile'] as $viewport) 
     $linked->forceFill(['organization_id' => $second->id, 'user_id' => $account->id, 'first_name' => 'Second', 'last_name' => 'Profile', 'status' => 'active', 'digital_access_mode' => 'app', 'preferred_locale' => 'en'])->save();
     $attendanceSession = $s->replicate(['public_id']);
     $attendanceStart = CarbonImmutable::now()->addMinutes(10);
-    $attendanceSession->forceFill(['starts_at' => $attendanceStart, 'ends_at' => $attendanceStart->addHour(), 'local_date' => $attendanceStart->setTimezone($org->timezone)->toDateString()])->save();
+    $attendanceSession->forceFill(['starts_at' => $attendanceStart, 'ends_at' => fixtureSessionEnd($attendanceStart, $org->timezone), 'local_date' => $attendanceStart->setTimezone($org->timezone)->toDateString()])->save();
     $selfFixtures[$viewport] = ['organization' => $org->public_id, 'second' => $second->public_id, 'session' => $s->public_id, 'other_member' => $other->public_id, 'attendance_session' => $attendanceSession->public_id];
 }
 file_put_contents(base_path('.local/browser-member-fixture.json'), json_encode($selfFixtures, JSON_THROW_ON_ERROR));
@@ -254,7 +263,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'QR Pilates', 'capacity' => 12, 'status' => 'active'])->save();
     $start = CarbonImmutable::now()->addMinutes(10);
     $s = new TrainingSession;
-    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
     $ids = [];
     foreach (['First', 'Second', 'Waiting', 'Fallback'] as $name) {
         $account = User::factory()->create(['name' => 'QR '.$name, 'email' => 'qr-'.strtolower($name).'-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
@@ -299,7 +308,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'QR Pilates', 'capacity' => 12, 'status' => 'active'])->save();
     $start = CarbonImmutable::now()->addMinutes(10);
     $s = new TrainingSession;
-    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Attendance trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
     $ids = [];
     foreach (['First', 'Second', 'Waiting', 'Fallback'] as $name) {
         $account = User::factory()->create(['name' => 'QR '.$name, 'email' => 'policy-'.strtolower($name).'-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
@@ -350,7 +359,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Operations Pilates', 'capacity' => 12, 'status' => 'active'])->save();
     $start = CarbonImmutable::now()->addMinutes(10);
     $s = new TrainingSession;
-    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Operations trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+    $s->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => 12, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Operations trainer', 'timezone' => $org->timezone, 'local_date' => $start->setTimezone($org->timezone)->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
     foreach (['Reserved', 'Walkin'] as $name) {
         $client = new StudioMember;
         $client->forceFill(['organization_id' => $org->id, 'first_name' => $name, 'last_name' => 'Offline', 'status' => 'active', 'digital_access_mode' => 'offline', 'preferred_locale' => 'mk'])->save();
@@ -363,7 +372,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     }
     $ended = $s->replicate(['public_id']);
     $ended->starts_at = $start->subHours(3);
-    $ended->ends_at = $start->subHours(2);
+    $ended->ends_at = fixtureSessionEnd($start->subHours(3), $org->timezone);
     $ended->local_date = $ended->starts_at->setTimezone($org->timezone)->toDateString();
     $ended->save();
     $pending = new StudioMember;
@@ -412,7 +421,7 @@ foreach (['desktop', 'mobile'] as $viewport) {
     foreach ([12, 2, 10] as $i => $capacity) {
         $start = $today->subDays(3 - $i)->startOfDay()->addHours(10);
         $session = new TrainingSession;
-        $session->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => $capacity, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Report Trainer', 'timezone' => $org->timezone, 'local_date' => $start->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+        $session->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => $capacity, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Report Trainer', 'timezone' => $org->timezone, 'local_date' => $start->toDateString(), 'starts_at' => $start, 'ends_at' => fixtureSessionEnd($start, $org->timezone)])->save();
         DB::transaction(function () use ($org, $session, $people, $actor, $i) {
             Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
             $session = Allocation::lock($session);
@@ -434,3 +443,5 @@ foreach (['desktop', 'mobile'] as $viewport) {
     $reportFixtures[$viewport] = ['group' => $group->public_id, 'trainer' => $trainer->public_id, 'ops_from' => $today->subDays(3)->toDateString(), 'ops_until' => $today->subDay()->toDateString(), 'organization' => $org->public_id, 'from' => $today->startOfMonth()->toDateString(), 'until' => $today->toDateString()];
 }
 file_put_contents(base_path('.local/browser-report-fixture.json'), json_encode($reportFixtures, JSON_THROW_ON_ERROR));
+
+echo "GT_BROWSER_FIXTURE_COMPLETE\n";
