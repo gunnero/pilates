@@ -14,10 +14,12 @@ use App\Models\TrainingGroup;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Support\Allocation;
+use App\Support\Attendance;
 use App\Support\AttendanceQr;
 use App\Support\FinanceLifecycle;
 use App\Support\Notifications\Delivery;
 use App\Support\Notifications\Generate;
+use App\Support\SessionLifecycle;
 use App\Support\SessionMaterializer;
 use App\Support\StaffRole;
 use App\Support\TenantContext;
@@ -373,3 +375,62 @@ foreach (['desktop', 'mobile'] as $viewport) {
 }
 
 file_put_contents(base_path('.local/browser-operations-fixture.json'), json_encode($operationsFixtures, JSON_THROW_ON_ERROR));
+
+// GT-017 reporting fixtures are independent of operational/payment mutation flows.
+$reportFixtures = [];
+foreach (['desktop', 'mobile'] as $viewport) {
+    $org = Organization::create(['name' => 'Reporting studio '.$viewport]);
+    $actor = User::factory()->create(['name' => 'Reporting owner', 'email' => 'reports-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $access = new OrganizationMembership;
+    $access->forceFill(['organization_id' => $org->id, 'user_id' => $actor->id, 'role' => StaffRole::Owner, 'status' => 'active', 'location_scope' => 'all', 'permissions' => StaffRole::Owner->permissions()])->save();
+    $member = new StudioMember;
+    $member->forceFill(['organization_id' => $org->id, 'first_name' => '=Лажен', 'last_name' => 'Член', 'status' => 'active', 'preferred_locale' => 'mk', 'digital_access_mode' => 'offline'])->save();
+    $context = app(TenantContext::class);
+    $context->resolve($actor, $org->public_id);
+    $plan = FinanceLifecycle::plan($context, $actor, ['name' => '+Синтетички план '.$viewport, 'price_minor' => 10000, 'duration_unit' => 'months', 'duration_count' => 1, 'status' => 'active']);
+    $today = CarbonImmutable::now($org->timezone);
+    $period = FinanceLifecycle::assign($context, $actor, $member->public_id, $plan->public_id, $today->startOfMonth()->toDateString());
+    $payment = FinanceLifecycle::pay($context, $actor, ['membership_id' => $period->public_id, 'amount_minor' => 4000, 'paid_at' => $today->subMinute()->toIso8601String(), 'request_id' => (string) Str::uuid7()]);
+    $reversed = FinanceLifecycle::pay($context, $actor, ['membership_id' => $period->public_id, 'amount_minor' => 2000, 'paid_at' => $today->subMinute()->toIso8601String(), 'request_id' => (string) Str::uuid7()]);
+    FinanceLifecycle::reverse($context, $actor, $reversed->public_id, 'wrong_amount');
+    // Historical operational fixtures: separate occurrences and real domain attendance writes.
+    $staff = User::factory()->create(['name' => 'Reporting trainer', 'email' => 'report-trainer-'.$viewport.'@browser.example.test', 'password' => 'Browser-fixture-123!']);
+    $staffAccess = new OrganizationMembership;
+    $staffAccess->forceFill(['organization_id' => $org->id, 'user_id' => $staff->id, 'role' => StaffRole::Trainer, 'status' => 'active', 'location_scope' => 'all', 'permissions' => [...StaffRole::Trainer->permissions(), 'reports.view', 'payments.view']])->save();
+    $loc = new Location;
+    $loc->forceFill(['organization_id' => $org->id, 'name' => 'Report Centar', 'status' => 'active'])->save();
+    $trainer = new TrainerProfile;
+    $trainer->forceFill(['organization_id' => $org->id, 'organization_membership_id' => $staffAccess->id, 'display_name' => 'Report Trainer', 'status' => 'active'])->save();
+    $group = new TrainingGroup;
+    $group->forceFill(['organization_id' => $org->id, 'location_id' => $loc->id, 'primary_trainer_id' => $trainer->id, 'name' => 'Report Pilates', 'capacity' => 12, 'status' => 'active'])->save();
+    $people = [$member];
+    foreach (['NoShow', 'Pending', 'Absent', 'Waiting'] as $name) {
+        $person = new StudioMember;
+        $person->forceFill(['organization_id' => $org->id, 'first_name' => $name, 'last_name' => 'Report fixture', 'status' => 'active', 'preferred_locale' => 'mk', 'digital_access_mode' => 'offline'])->save();
+        $people[] = $person;
+    }
+    foreach ([12, 2, 10] as $i => $capacity) {
+        $start = $today->subDays(3 - $i)->startOfDay()->addHours(10);
+        $session = new TrainingSession;
+        $session->forceFill(['organization_id' => $org->id, 'training_group_id' => $group->id, 'location_id' => $loc->id, 'trainer_profile_id' => $trainer->id, 'source_type' => 'manual', 'status' => 'scheduled', 'capacity' => $capacity, 'group_name' => $group->name, 'location_name' => $loc->name, 'trainer_name' => 'Report Trainer', 'timezone' => $org->timezone, 'local_date' => $start->toDateString(), 'starts_at' => $start, 'ends_at' => $start->addHour()])->save();
+        DB::transaction(function () use ($org, $session, $people, $actor, $i) {
+            Organization::whereKey($org->id)->lockForUpdate()->firstOrFail();
+            $session = Allocation::lock($session);
+            if ($i === 2) {
+                SessionLifecycle::markCancelled($session, 'manual', null);
+
+                return;
+            }
+            foreach (($i === 0 ? [0 => 'present', 1 => 'no_show', 2 => null] : [0 => 'present', 3 => 'absent']) as $person => $status) {
+                $reservation = new Reservation;
+                $reservation->forceFill(['organization_id' => $org->id, 'training_session_id' => $session->id, 'studio_member_id' => $people[$person]->id, 'source' => 'staff', 'status' => 'active', 'created_by' => $actor->id])->save();
+                if ($status !== null) {
+                    Attendance::write($session, $reservation, $status, 'staff', $actor, false, null, $i === 1 && $person === 0 ? 'attendance.walk_in' : 'attendance.marked');
+                }
+            }
+        });
+    }
+    $context->clear();
+    $reportFixtures[$viewport] = ['group' => $group->public_id, 'trainer' => $trainer->public_id, 'ops_from' => $today->subDays(3)->toDateString(), 'ops_until' => $today->subDay()->toDateString(), 'organization' => $org->public_id, 'from' => $today->startOfMonth()->toDateString(), 'until' => $today->toDateString()];
+}
+file_put_contents(base_path('.local/browser-report-fixture.json'), json_encode($reportFixtures, JSON_THROW_ON_ERROR));

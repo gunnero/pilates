@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 /** Explicit staff credentials, independent of member access and member tokens. */
 final class OperationsAccountController
 {
-    private const ABILITIES = ['studio.access', 'sessions.view', 'attendance.view', 'attendance.manage', 'attendance.correct', 'reservations.view', 'reservations.manage', 'waiting_list.view', 'members.view', 'memberships.view', 'payments.view', 'organizations.manage', 'account.security'];
+    private const ABILITIES = ['studio.access', 'sessions.view', 'attendance.view', 'attendance.manage', 'attendance.correct', 'reservations.view', 'reservations.manage', 'waiting_list.view', 'members.view', 'memberships.view', 'payments.view', 'organizations.manage', 'reports.view', 'account.security'];
 
     public function token(MemberTokenRequest $r): JsonResponse
     {

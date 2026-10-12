@@ -51,3 +51,7 @@ The existing GT-010 domain/outbox now owns in-app, push and email destinations. 
 ## GT-016 operations projections
 
 The [operations dashboard contract](../domain/operations-dashboard.md) composes existing session, reservation, attendance, finance and communication state without a new business ledger. Read-only repeatable-read snapshots provide internally consistent responses; commands retain existing organization/session locking and audit coupling. Native staff mode uses explicit limited staff tokens, separate from member credentials, and current TenantContext authorization. See the [daily operations guide](../operations/daily-operations.md).
+
+## Reporting
+
+GT-017 adds direct canonical PostgreSQL aggregates through read-only repeatable-read snapshots; no shadow ledger, projection cache or background export service. A short separate Lifecycle transaction rechecks authority and records access/export evidence. See [reporting API](reporting-api.md) and [metric dictionary](../domain/reporting.md).

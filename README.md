@@ -95,3 +95,5 @@ GT-015 extends the existing inbox with channel preferences, account-bound native
 ## GT-016 daily operations
 
 Staff web navigation now includes Daily operations; the native app includes separate trainer/staff sign-in. Both use scoped session/roster/profile projections and existing attendance commands. See [domain/API contracts](docs/domain/operations-dashboard.md), [daily workflows](docs/operations/daily-operations.md), and [verification](docs/tasks/GT-016_COMPLETION.md).
+
+GT-017 reporting work: [metric dictionary](docs/domain/reporting.md), [user guide](docs/operations/reporting.md), [API/export contract](docs/architecture/reporting-api.md), [verification status](docs/tasks/GT-017_COMPLETION.md).

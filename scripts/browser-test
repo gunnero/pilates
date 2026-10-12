@@ -4,10 +4,14 @@ cd "$(dirname "$0")/.."
 if [[ -d "$PWD/.local/browser-libs/usr/lib/x86_64-linux-gnu" ]]; then
     export LD_LIBRARY_PATH="$PWD/.local/browser-libs/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
-# Each viewport owns a fresh gt_test fixture/cache lifecycle. A shared loopback
-# login-IP bucket must not carry desktop traffic into the mobile project.
+# Each batch owns a fresh gt_test fixture/cache lifecycle. Real production login
+# limits still apply: unrelated flows must not exhaust the same loopback IP bucket.
 if [[ $# -eq 0 ]]; then
-    pnpm exec playwright test --project=desktop
-    exec pnpm exec playwright test --project=mobile
+    mapfile -t prior_flows < <(rg --files tests/browser -g '*.spec.ts' -g '!reports.spec.ts' | sort)
+    for viewport in desktop mobile; do
+        pnpm exec playwright test "${prior_flows[@]}" --project="$viewport"
+        pnpm exec playwright test tests/browser/reports.spec.ts --project="$viewport"
+    done
+    exit 0
 fi
 exec pnpm exec playwright test "$@"

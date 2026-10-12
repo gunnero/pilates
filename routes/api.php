@@ -18,6 +18,7 @@ use App\Http\Controllers\OrganizationContextController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermanentSpotController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ScheduleRuleController;
 use App\Http\Controllers\StaffController;
@@ -91,6 +92,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         Route::get('/members/{member}/invitations', [MemberInvitationController::class, 'index'])->whereUuid('member');
         Route::post('/members/{member}/invitations', [MemberInvitationController::class, 'store'])->whereUuid('member')->middleware('throttle:member-write');
         Route::post('/member-invitations/{invitation}/revoke', [MemberInvitationController::class, 'revoke'])->whereUuid('invitation')->middleware('throttle:member-write');
+        Route::get('/reports', [ReportController::class, 'show'])->middleware('can:reports.view');
         Route::prefix('operations')->middleware(['can:attendance.view', 'can:sessions.view'])->group(function (): void {
             Route::get('/', [OperationsController::class, 'index']);
             Route::post('/sessions/{session}/roster', [OperationsController::class, 'roster'])->whereUuid('session');

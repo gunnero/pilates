@@ -56,3 +56,5 @@ GT-014 records studio.settings_changed against the organization, with changed nu
 ## GT-015 communication audit
 
 Device registration/revocation and announcement creation/cancellation record actor, organization and safe public subject identifiers under the same organization-locked transaction. Preference updates record effective boolean before/after values. Raw tokens, announcement text and member contact data are excluded. Automated delivery retry/failure evidence belongs to delivery/attempt/receipt rows and finite operational logs; GT-015 stops adding those automated events to business audit without modifying existing evidence.
+
+GT-017 successful views record `report.viewed`; completed private export preparation and response handoff record `report.export_prepared` and `report.download_started` together after reauthorization. Audit failure fails closed and deletes the file. Metadata includes bounded filters and correlation IDs, never report rows. Handoff is not proof of OS download completion. See [contract](../architecture/reporting-api.md).

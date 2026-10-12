@@ -187,3 +187,7 @@ External delivery is outside the domain transaction, with PostgreSQL outbox iden
 ## GT-016 staff operations
 
 Daily projections aggregate sensitive participation and financial signals. They inherit TenantContext plus current assignment/location scope, independently filter financial fields and exclude trainer-wide communication aggregates. JSON-body search avoids member names in URLs; bounded read-only snapshots avoid inconsistent summary/payment states without holding write locks. Native staff tokens are separate from member identity, use explicit abilities plus current database grants, and clear local context on logout/switch. Cached read state never authorizes Attendance/Allocation writers. See [the focused review](gt-016-review.md).
+
+## GT-017 reporting boundary
+
+Aggregates and exports are protected data. Reporting derives tenant, location and Trainer scope server-side, separately gates financial/current-member fields, bounds ranges and export resources, and rechecks authority before release. Private temporary files, formula-safe CSV/literal XLSX cells and stale-context clearing address export and client disclosure threats. Current read snapshots cannot reconstruct historical mutable member state; previously delivered bytes cannot be revoked. See [focused review](gt-017-review.md), including unresolved dependency-audit findings.

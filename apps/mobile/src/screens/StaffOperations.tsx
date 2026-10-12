@@ -1,3 +1,5 @@
+import { reports } from '../locales/reports';
+import { StaffReports } from './StaffReports';
 import { useEffect, useCallback, useMemo, useState } from 'react';
 import { AppState, Linking, View } from 'react-native';
 import { OperationsClient } from '../api/operations';
@@ -129,6 +131,7 @@ export function StaffOperations({
     const [mark, setMark] = useState('present');
     const [revision, setRevision] = useState(0);
     const [notice, setNotice] = useState('');
+    const [reporting, setReporting] = useState(false);
     const base = org ? `/api/v1/organizations/${org.id}` : '';
     function clearView() {
         client.invalidate();
@@ -362,6 +365,19 @@ export function StaffOperations({
         );
         if (e === client.generation) setProfile(r.data);
     }
+    if (reporting && org && organizations)
+        return (
+            <StaffReports
+                key={org.id}
+                client={client}
+                organization={org.id}
+                exit={() => {
+                    client.invalidate();
+                    setReporting(false);
+                    refresh();
+                }}
+            />
+        );
     return (
         <Screen
             headerless
@@ -429,6 +445,15 @@ export function StaffOperations({
             ) : (
                 <>
                     <Heading>{org.name}</Heading>
+                    {permissions.includes('reports.view') && (
+                        <Button
+                            label={reports[locale].reportTitle}
+                            onPress={() => {
+                                clearView();
+                                setReporting(true);
+                            }}
+                        />
+                    )}
                     <Button
                         label={text('selectStudio')}
                         disabled={busy}

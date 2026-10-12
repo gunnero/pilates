@@ -876,3 +876,65 @@ h2 {
 .operations-workspace article {
     overflow-wrap: anywhere;
 }
+
+.report-workspace {
+    min-width: 0;
+}
+.report-workspace form > * {
+    min-width: 0;
+}
+.report-workspace input,
+.report-workspace select {
+    width: 100%;
+    max-width: 100%;
+}
+.report-workspace .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin: 1rem 0;
+}
+.report-table {
+    overflow-x: auto;
+    max-width: 100%;
+    margin: 1rem 0;
+}
+.report-table table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.report-table th,
+.report-table td {
+    text-align: start;
+    padding: 0.65rem;
+    border-bottom: 1px solid var(--line, #d9e1db);
+    white-space: nowrap;
+}
+.report-totals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+.report-totals dd {
+    font-size: 1.4rem;
+    margin: 0.25rem 0;
+    overflow-wrap: anywhere;
+}
+.report-bar {
+    display: grid;
+    grid-template-columns: minmax(70px, 1fr) minmax(30px, 3fr) minmax(30px, 1fr);
+    gap: 0.5rem;
+    align-items: center;
+}
+.report-bar meter {
+    width: 100%;
+}
+.report-workspace figure {
+    margin: 1rem 0;
+}
+.report-workspace nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}

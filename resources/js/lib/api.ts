@@ -77,6 +77,7 @@ export type Organization = {
     status: 'active' | 'inactive' | 'suspended';
     permissions: string[];
     membership_id: string;
+    role?: 'owner' | 'administrator' | 'trainer' | 'staff';
     location_scope: 'all' | 'selected';
 };
 

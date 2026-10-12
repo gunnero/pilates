@@ -16,6 +16,7 @@ import { Members } from './Members';
 import { Trainers } from './Trainers';
 import { Groups } from './Groups';
 import { AttendanceToday } from './Attendance';
+import { Reports } from './Reports';
 import { Operations } from './Operations';
 import { Sessions } from './Sessions';
 import { LanguagePicker } from './LanguagePicker';
@@ -202,6 +203,7 @@ export function StudioShell() {
                                     'schedule',
                                     'attendance',
                                     'operations',
+                                    'reports',
                                     'memberships',
                                     'payments',
                                 ].includes(item) && (
@@ -298,6 +300,11 @@ export function StudioShell() {
                         ) : (
                             <p>{t('accessDenied')}</p>
                         )
+                    ) : section === 'reports' ? (
+                        <Reports
+                            key={organization.id}
+                            organization={organization}
+                        />
                     ) : section === 'settings' ? (
                         <OrganizationSettings
                             key={organization.id}

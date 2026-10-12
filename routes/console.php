@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Reporting\ReportExport;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -16,3 +17,7 @@ foreach (array_slice(config('notifications.scheduled_organizations', []), 0, 20)
         Schedule::command('gt:notifications:generate', [$organization, '--limit=100'])->everyMinute();
     }
 }
+
+Artisan::command('gt:reports:cleanup', function (): void {
+    $this->info('Removed stale report artifacts: '.ReportExport::cleanup());
+})->purpose('Remove private report files older than 24 hours');

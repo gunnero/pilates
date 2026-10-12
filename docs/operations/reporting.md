@@ -1,0 +1,23 @@
+# Using reports
+
+Open **Reports / Извештаи** in the studio web navigation. In the native staff area open Reports. Member self-service does not gain staff access. Existing staff mobile sessions issued before GT-017 need a fresh login to obtain the added `reports.view` token ceiling; current membership grants are still mandatory.
+
+Choose a report, dates and daily/weekly/monthly grouping. Apply the filters. Previous-period comparisons use equal calendar-day counts; custom comparisons have independent dates. Plan filters appear only for financial/expiry reports; group and trainer choices remain within visible sessions. Settlement separates validity and payment state; expiry uses disjoint day buckets. Popularity lets you choose the demand measure and top result count. Reset restores bounded defaults. Refresh obtains a new current snapshot.
+
+Read the basis and “Data as of” text before comparing values. Net cash collections follow GT-009's original payment dates even when a later correction reverses a receipt. Settlement, expiry and eligibility describe current records. Attendance rates exclude pending outcomes; occupancy uses configured session capacity. “—” means an undefined denominator or unavailable comparison, not zero. The [metric dictionary](../domain/reporting.md) defines each value.
+
+Tables accompany charts and provide exact values, including all date buckets. Use “All matching details” for paginated source records. Financial/member actions stay in the existing management workflows; reports do not change any business records. Native reporting has a Back action to the existing operations area. No offline report cache is retained.
+
+CSV and Excel export the chosen summary or every matching detail, up to 50,000 rows / 25 MiB. They use a new consistent snapshot, which may differ from an older screen. The server checks access again before releasing bytes. Browser downloads use an authenticated request; native downloads use the current secure-store-derived bearer credential and open the OS share sheet. A failed request can be retried. Native temporary files are deleted after sharing/failure and when leaving the screen. A user-selected copy in another app cannot be remotely revoked.
+
+Reports support Macedonian and English. Server-produced Excel headers include stable machine keys plus localized labels; CSV also includes stable keys plus localized labels, with metadata for machine interoperability. Dates and money units remain unambiguous. No production provider is involved.
+
+## Operations and reproduction
+
+No scheduler, queue or persisted report job is needed. Private completed export files are deleted after response or on failure. `php artisan gt:reports:cleanup` removes interrupted report files older than 24 hours; export preparation also performs that cleanup. Run this command through the operator's existing maintenance procedure if downloads are infrequent. GT-017 does not alter host cron or shared services.
+
+Required runtime additions: OpenSpout 5.12 (MIT) for real XLSX, SDK-compatible Expo filesystem/sharing for native export. Expo compatible patches were narrowly updated because Doctor identified stale baseline packages. Lockfiles preserve the exact resolved versions; no audit suppression was added.
+
+Reproduce with the established complete checks, plus `composer test -- --filter=Reporting`, `python3 tests/Support/reporting-preservation.py` and `pnpm test:e2e`. PHPUnit and browser tests share local `gt_test` and must be sequential. The preservation helper creates two temporary, loopback-only PostgreSQL clusters on 55435/55436, each with database and role `gt_test`, and stops/removes only those clusters. It never connects to development or shared databases. Ports must be free. Performance evidence is written under ignored `.local/gt017/performance.json`; screenshots and independently parsed synthetic downloads under `.local/gt017/browser/`.
+
+Display values use studio-local dates and MK/EN number/currency formatting; machine API/export amounts remain exact minor units. The shared presentation code uses BigInt for money, including values above JavaScript’s safe integer range. This month, last seven local days and this year presets derive from the server’s local today, not the device clock. Web URL context stores only bounded report filter identifiers/dates and the selected studio ID; reopening under a different studio or role cannot restore unauthorized report choices. Native retains its report filters during refresh/resume and discards protected values during revalidation. Incomplete custom comparison inputs are explicitly labelled; they are not an endless loading state.

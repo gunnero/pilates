@@ -184,7 +184,12 @@ test('staff invitation, member self-service, FIFO, history, IDOR and studio isol
     execFileSync('php', ['tests/browser/deliver.php', fixture.organization]);
     await other.reload();
     await english(other);
-    await expect(other.getByText('Member Pilates')).toBeVisible();
+    await expect(
+        other
+            .getByRole('article')
+            .filter({ hasText: 'Scheduled' })
+            .getByRole('heading', { name: 'Member Pilates', exact: true }),
+    ).toBeVisible();
     await other
         .getByRole('button', { name: 'Notifications', exact: true })
         .click();

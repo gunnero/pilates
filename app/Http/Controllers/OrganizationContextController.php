@@ -17,6 +17,6 @@ class OrganizationContextController
 
         return response()->json(['data' => [...Representations::organization($context->organization()),
             'permissions' => $context->permissions($user), 'membership_id' => $context->membership()->public_id,
-            'location_scope' => $context->membership()->location_scope->value]]);
+            'role' => $context->membership()->role->value, 'location_scope' => $context->membership()->location_scope->value]]);
     }
 }
