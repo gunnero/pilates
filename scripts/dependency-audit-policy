@@ -1,55 +1,194 @@
 #!/usr/bin/env python3
-"""Raw audit collection is evidence. Only a complete clean audit satisfies policy.
-
-There is deliberately no active CI exception or advisory allowlist. The historical
-GT-017 local-commit approval does not authorize this gate or any release.
-"""
+"""Keep raw audit failure separate from the dated, exact GT-017 policy decision."""
+import argparse
+from datetime import datetime, timedelta, timezone
+import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 
+ROOT = Path(__file__).resolve().parents[1]
+LOCK_HASH = '201a90477966e1ba3d33972d2673a0a64ae0c8eb9dbd8d0f5ab3533f7345bab5'
+PATHS_HASH = '79950107d7a0218b28e005e20a69fd49821377676ba180a692308841604c2445'
+SCOPES = {'ci', 'private-local-web'}
+APPROVED_FROM = datetime(2026, 10, 12, tzinfo=timezone.utc)
+EXPIRES = datetime(2026, 10, 27, tzinfo=timezone.utc)  # Through 26 October, UTC.
+REQUIRED = {'php-quality', 'backend', 'web', 'native', 'browser', 'preservation', 'audits', 'artifacts'}
+APPROVED = {
+    'GHSA-86w9-cpqp-85rv': ('node-forge', '1.4.0', '<=1.4.0', 'high'),
+    'GHSA-vfj7-8cjw-p6xm': ('braces', '3.0.3', '<=3.0.3', 'high'),
+    'GHSA-hp3w-g68c-fv3c': ('sprintf-js', '1.0.3', '<=1.1.3', 'moderate'),
+}
+COUNTS = {'info': 0, 'low': 0, 'moderate': 1, 'high': 2, 'critical': 0}
 
-def evaluate(report, status):
-    if type(status) is not int or status != 0 or not isinstance(report, dict):
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def strict_json(data):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate JSON key')
+            result[key] = value
+        return result
+    def invalid_constant(value):
+        raise ValueError('Nonstandard JSON constant: ' + value)
+    return json.loads(data, object_pairs_hook=unique, parse_constant=invalid_constant)
+
+
+def path_matches(path, graph, target):
+    """Audit paths are capped, versionless samples; walk exact peer-qualified edges.
+
+    Complete graph identity is enforced independently by BOTH approved file hashes.
+    Never infer the full graph from the registry's first 100 path samples.
+    """
+    if not isinstance(path, str) or not path or len(path) > 10000:
         return False
-    metadata = report.get('metadata')
-    if not isinstance(metadata, dict):
+    parts = path.split('>')
+    roots = {'.': 'workspace .', 'apps__mobile': 'workspace apps/mobile'}
+    nodes = graph['nodes']
+    current = {key for key, value in nodes.items() if value == roots.get(parts[0])}
+    edges = graph['advisories'][target]
+    for name in parts[1:]:
+        current = {end for start, end, _ in edges
+                   if start in current and nodes[end].split('(', 1)[0].rsplit('@', 1)[0] == name}
+    return any(nodes[key] == target for key in current)
+
+
+def evaluate(report, status, graph, scope, now, results):
+    if scope not in SCOPES or not APPROVED_FROM <= now < EXPIRES:
+        return False
+    if (not isinstance(results, dict) or set(results) != REQUIRED
+            or any(not isinstance(job, dict) or job.get('result') != 'success' for job in results.values())):
+        return False
+    if type(status) is not int or status != 1 or not isinstance(report, dict):
+        return False
+    if set(report) != {'metadata', 'advisories'} or not isinstance(report['metadata'], dict):
+        return False
+    metadata = report['metadata']
+    if (set(metadata) != {'vulnerabilities', 'dependencies', 'devDependencies', 'optionalDependencies', 'totalDependencies'}
+            or any(type(metadata[field]) is not int or metadata[field] < 0
+                   for field in metadata if field != 'vulnerabilities')
+            or metadata['totalDependencies'] <= 0):
         return False
     counts = metadata.get('vulnerabilities')
-    if not isinstance(counts, dict) or set(counts) != {'info', 'low', 'moderate', 'high', 'critical'}:
+    if (not isinstance(counts, dict) or counts != COUNTS
+            or any(type(value) is not int for value in counts.values())):
         return False
-    return (
-        all(type(value) is int and value == 0 for value in counts.values())
-        and report.get('advisories') == {}
-        and not report.get('error')
-    )
+    advisories = report['advisories']
+    if not isinstance(advisories, dict) or len(advisories) != len(APPROVED):
+        return False
+    seen = set()
+    for key, advisory in advisories.items():
+        if not isinstance(advisory, dict):
+            return False
+        identity = advisory.get('github_advisory_id')
+        if not isinstance(identity, str) or identity not in APPROVED or identity in seen:
+            return False
+        seen.add(identity)
+        name, version, affected, severity = APPROVED[identity]
+        if (type(advisory.get('id')) is not int or str(advisory['id']) != key
+                or advisory.get('module_name') != name or advisory.get('vulnerable_versions') != affected
+                or advisory.get('severity') != severity
+                or advisory.get('url') != 'https://github.com/advisories/' + identity
+                or 'patched_versions' not in advisory or advisory['patched_versions'] is not None
+                or advisory.get('patched_versions_unpublished') is not True or 'error' in advisory):
+            return False
+        findings = advisory.get('findings')
+        if not isinstance(findings, list) or not findings:
+            return False
+        for finding in findings:
+            if (not isinstance(finding, dict) or finding.get('version') != version
+                    or any(type(finding.get(flag)) is not bool for flag in ['dev', 'optional', 'bundled'])):
+                return False
+            paths = finding.get('paths')
+            if not isinstance(paths, list) or not paths or not all(path_matches(p, graph, name + '@' + version) for p in paths):
+                return False
+    return seen == set(APPROVED)
+
+
+def check(directory, root, scope, now, results, head, run_id):
+    """Verify complete, fresh, same-source raw evidence before policy evaluation."""
+    try:
+        raw = (directory / 'audit.json').read_bytes()
+        stderr = (directory / 'audit-stderr.txt').read_bytes()
+        status = strict_json((directory / 'audit-status.json').read_bytes())
+        appendix = (root / 'docs/security/GT-017_DEPENDENCY_PATHS.json').read_bytes()
+        lock = (root / 'pnpm-lock.yaml').read_bytes()
+        if (digest(lock) != LOCK_HASH or digest(appendix) != PATHS_HASH or stderr
+                or status['command'] != 'pnpm audit --json'
+                or status['audit_sha256'] != digest(raw) or status['lockfile_sha256'] != LOCK_HASH
+                or status['paths_sha256'] != PATHS_HASH or status['head'] != head
+                or status['run_id'] != run_id):
+            return False
+        collected = datetime.fromisoformat(status['collected_at'])
+        if not timedelta(0) <= now - collected <= timedelta(hours=24):
+            return False
+        graph = strict_json(appendix)['graphs']['GT017']
+        return graph['lockfile_sha256'] == LOCK_HASH and evaluate(
+            strict_json(raw), status['exit_code'], graph, scope, now, results)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return False
+
+
+def announce(message):
+    print(message)
+    summary = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary:
+        with open(summary, 'a') as output:
+            output.write(message + '\n\n')
 
 
 def main():
-    mode, directory = sys.argv[1:]
-    directory = Path(directory)
-    if mode == 'collect':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('mode', choices=['collect', 'check'])
+    parser.add_argument('directory', type=Path)
+    parser.add_argument('--scope', default='unapproved')
+    args = parser.parse_args()
+    directory = args.directory
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    run_id = os.environ.get('GITHUB_RUN_ID', 'local')
+    now = datetime.now(timezone.utc)
+    if args.mode == 'collect':
         directory.mkdir(parents=True, exist_ok=True)
         try:
-            result = subprocess.run(['pnpm', 'audit', '--json'], capture_output=True, text=True, timeout=180)
+            result = subprocess.run(['pnpm', 'audit', '--json'], capture_output=True, timeout=180, cwd=ROOT)
             output, error, status = result.stdout, result.stderr, result.returncode
         except (OSError, subprocess.TimeoutExpired):
-            output, error, status = '', 'Audit execution unavailable or timed out.', 125
-        (directory / 'audit.json').write_text(output)
-        (directory / 'audit-stderr.txt').write_text(error)
-        (directory / 'audit-status.json').write_text(json.dumps({'command': 'pnpm audit --json', 'exit_code': status}) + '\n')
-        print(f'Raw dependency audit {"PASS" if status == 0 else "FAILED"}; exit {status}. Collection is not policy approval.')
-        return 0
-    if mode != 'check':
-        return 2
+            output, error, status = b'', b'Audit execution unavailable or timed out.', 125
+        (directory / 'audit.json').write_bytes(output)
+        (directory / 'audit-stderr.txt').write_bytes(error)
+        (directory / 'audit-status.json').write_text(json.dumps({
+            'command': 'pnpm audit --json', 'exit_code': status, 'audit_sha256': digest(output),
+            'lockfile_sha256': digest((ROOT / 'pnpm-lock.yaml').read_bytes()),
+            'paths_sha256': digest((ROOT / 'docs/security/GT-017_DEPENDENCY_PATHS.json').read_bytes()),
+            'head': head, 'run_id': run_id, 'collected_at': now.isoformat(),
+        }, indent=2) + '\n')
+        announce(f'Raw dependency audit {"PASS" if status == 0 else "FAILED"}; exit {status}. '
+                 'Full unsuppressed evidence retained. Collection is NOT policy acceptance.')
+        return 0  # Evidence collection only; mandatory aggregate check consumes this result.
     try:
-        report = json.loads((directory / 'audit.json').read_text())
-        status = json.loads((directory / 'audit-status.json').read_text())['exit_code']
-        passed = evaluate(report, status)
-    except (OSError, ValueError, KeyError, TypeError):
-        passed = False
-    print('Dependency policy ' + ('PASS: complete clean audit.' if passed else 'FAILED: findings, unavailable/malformed evidence, or unsuccessful audit. No CI/release exception is approved.'))
+        results = strict_json(os.environ.get('RESULTS', 'null'))
+    except ValueError:
+        results = None
+    passed = check(directory, ROOT, args.scope, now, results, head, run_id)
+    message = ('Dependency policy ACCEPTED: raw audit remains FAILED with exactly three approved residual findings; '
+               'all eight other categories passed. CI/private-local-web only, through 26 October 2026 UTC. '
+               'Packages are NOT patched; production is NOT approved.' if passed else
+               'Dependency policy FAILED: unapproved/expired scope, changed findings/paths/hashes, '
+               'missing/malformed/stale/error evidence, or another required category did not pass.')
+    announce(message)
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / 'policy-result.json').write_text(json.dumps({
+        'accepted': passed, 'scope': args.scope, 'head': head, 'run_id': run_id,
+        'checked_at': now.isoformat(), 'expires_at': EXPIRES.isoformat(), 'message': message,
+        'required_results': results,
+    }, indent=2) + '\n')
     return 0 if passed else 1
 
 

@@ -1,6 +1,6 @@
 # GT-017 private local release and recovery runbook
 
-Scope confirmed by the user on 12 October 2026: **local use only**. This is a reviewed procedure and an isolated exercise, not authorization to expose a site, change shared Caddy/PHP/PostgreSQL/Redis/firewall/DNS, or enable providers/signing. Current security policy is denied pending the separate dependency decision in the [review](../security/GT-017_DEPENDENCY_REVIEW.md).
+Scope confirmed by the user on 12 October 2026: **local use only**. This is a reviewed procedure and an isolated exercise, not authorization to expose a site, change shared Caddy/PHP/PostgreSQL/Redis/firewall/DNS, or enable providers/signing. The user approved the exact CI/private-local dependency exception through 26 October 2026, recorded in the [review](../security/GT-017_DEPENDENCY_REVIEW.md). Raw audit remains FAILED; the separate policy requires unchanged graph hashes, current scope/expiry and every other mandatory check passing. This does not authorize a persistent service or production readiness.
 
 ## Verified boundary
 

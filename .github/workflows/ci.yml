@@ -141,6 +141,7 @@ jobs:
           retention-days: 7
           include-hidden-files: true
   audits:
+    name: Audit evidence, Composer, peers and policy tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -154,9 +155,6 @@ jobs:
         if: ${{ !cancelled() }}
       - run: python3 tests/Support/dependency-policy-test.py
         name: Audit-policy fail-closed regression checks
-        if: ${{ !cancelled() }}
-      - run: scripts/dependency-audit-policy check .local/ci-audit
-        name: Mandatory dependency policy (no approved CI exception)
         if: ${{ !cancelled() }}
       - run: pnpm peers check
         name: Peer dependency checks
@@ -193,14 +191,22 @@ jobs:
       - artifacts
     runs-on: ubuntu-latest
     steps:
-      - name: Every required category must actually succeed
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: raw-dependency-audit
+          path: .local/ci-audit/
+      - name: Required policy — all categories plus dated CI/private-local exception
         env:
           RESULTS: ${{ toJSON(needs) }}
-        run: |-
-          python3 - <<'PYCODE'
-          import json, os, sys
-          jobs = json.loads(os.environ['RESULTS'])
-          for name, job in jobs.items():
-              print(name + ': ' + job['result'])
-          sys.exit(0 if jobs and all(job['result'] == 'success' for job in jobs.values()) else 1)
-          PYCODE
+        run: scripts/dependency-audit-policy check .local/ci-audit --scope ci
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: dependency-policy-decision
+          path: .local/ci-audit/policy-result.json
+          if-no-files-found: error
+          retention-days: 7
+          include-hidden-files: true

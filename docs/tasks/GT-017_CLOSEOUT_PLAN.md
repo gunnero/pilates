@@ -43,6 +43,10 @@ The original completion report remains a historical record. Current results and 
 
 - Second corrective run38299999030 passed every functional category except backend:35report races and the final benchmark evidence write assumed `.local/gt017` existed. Added0700directory creation in the two affected suites, preserving every assertion/barrier/timeout/budget. A fresh independently installed snapshot reproduces the original failure without that directory; targeted PostgreSQL re-verification and another full hosted run are required.
 
-## Final disposition
+## Disposition before the subsequent CI approval
 
 All discovered formatting, clean-runner, fixture and evidence-directory defects are fixed. [Run38301260238](https://github.com/gunnero/pilates/actions/runs/38301260238) on65ffc8a passed every independent functional category, preservation and recovery. The only remaining action is explicit approval or rejection of the separate, exact-path CI/private-local dependency proposal through26October2026. Raw audit FAILED and policy DENIED are retained. The final documentation-only record and exact-HEAD hosted verification are part of closeout; no public deployment or GT-018 is authorized.
+
+## Approved policy implementation — 12 October 2026
+
+The user explicitly approved the exact CI/private-local exception through 26 October 2026, superseding the pending decision above. Implement and test the narrow aggregate policy, retaining the full unsuppressed FAILED raw audit. Amend only closeout §04 and §12; all other requirements stay mandatory. Re-run affected/local required checks, normally push focused maintenance, inspect every final-HEAD hosted category, and record complete closeout/private-local-only readiness only after those gates succeed. No public/persistent/provider/signing/native distribution or GT-018 authorization is inferred. Scope, exact hashes, uncertainty, mitigations and earlier-review triggers are recorded in the [dependency review](../security/GT-017_DEPENDENCY_REVIEW.md).
