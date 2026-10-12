@@ -55,7 +55,7 @@ test('communication announcements, session changes, preferences, read state and 
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page).not.toHaveURL(/login/);
     await page.goto('/settings');
-    await page.getByLabel('Јазик').selectOption('en');
+    await page.getByRole('banner').getByLabel('Јазик').selectOption('en');
     const announcements = page.getByRole('region', {
         name: 'Studio announcements',
         exact: true,
